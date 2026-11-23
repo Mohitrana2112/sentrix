@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}OSINT Explorer – Advanced Google Dork Intelligence{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+  <div style="display:flex; align-items:center; gap:0.6rem;">
+    <i data-lucide="crosshair" style="color:var(--cyan-electric); width:28px; height:28px;"></i>
+    <h1 style="font-size:1.8rem; font-weight:800; letter-spacing:-0.02em;">OSINT Explorer</h1>
+  </div>
+  <p style="color:var(--text-muted); font-size:0.92rem; margin-top:0.25rem;">
+    Generate defensive search engine intelligence queries across 8 tactical reconnaissance categories.
+  </p>
+</div>
+
+<!-- ======================================================================
+     ASYMMETRIC THREE-PANEL OSINT WORKSPACE
+     ====================================================================== -->
+<div style="display:flex; gap:1.25rem; align-items:stretch;" class="split-workspace">
+  
+  <!-- ==================== LEFT PANEL: CATEGORY NAVIGATION ==================== -->
+  <div class="workspace-left" style="width:280px; flex-shrink:0;">
+    <div class="sentrix-card" style="height:100%;">
+      <h3 style="font-size:0.85rem; font-weight:700; text-transform:uppercase; color:var(--text-dim); margin-bottom:1rem; letter-spacing:0.05em;">
+        Research Categories
+      </h3>
+
+      <div style="display:flex; flex-direction:column; gap:0.4rem;">
+        <a href="{{ url_for('osint_explorer', domain=target_domain, category='all') }}" 
+           class="nav-link {% if active_category == 'all' %}active{% endif %}" style="padding:0.65rem 0.85rem;">
+          <i data-lucide="layers" style="width:16px;height:16px;"></i> All Categories
+        </a>
+        <a href="{{ url_for('osint_explorer', domain=target_domain, category='files') }}" 
+           class="nav-link {% if active_category == 'files' %}active{% endif %}" style="padding:0.65rem 0.85rem;">
+          <i data-lucide="file-text" style="width:16px;height:16px;"></i> Exposed Files
+        </a>
+        <a href="{{ url_for('osint_explorer', domain=target_domain, category='login') }}" 
+           class="nav-link {% if active_category == 'login' %}active{% endif %}" style="padding:0.65rem 0.85rem;">
+          <i data-lucide="key-round" style="width:16px;height:16px;"></i> Auth Portals
+        </a>
+        <a href="{{ url_for('osint_explorer', domain=target_domain, category='directories') }}" 
+           class="nav-link {% if active_category == 'directories' %}active{% endif %}" style="padding:0.65rem 0.85rem;">
+          <i data-lucide="folder-search" style="width:16px;height:16px;"></i> Directory Listings
+        </a>
+        <a href="{{ url_for('osint_explorer', domain=target_domain, category='subdomains') }}" 
+           class="nav-link {% if active_category == 'subdomains' %}active{% endif %}" style="padding:0.65rem 0.85rem;">
+          <i data-lucide="network" style="width:16px;height:16px;"></i> Subdomains &amp; Dev
+        </a>
+        <a href="{{ url_for('osint_explorer', domain=target_domain, category='documentation') }}" 
+           class="nav-link {% if active_category == 'documentation' %}active{% endif %}" style="padding:0.65rem 0.85rem;">
+          <i data-lucide="book-open" style="width:16px;height:16px;"></i> Documentation
+        </a>
+        <a href="{{ url_for('osint_explorer', domain=target_domain, category='technology') }}" 
+           class="nav-link {% if active_category == 'technology' %}active{% endif %}" style="padding:0.65rem 0.85rem;">
+          <i data-lucide="cpu" style="width:16px;height:16px;"></i> Tech Footprints
+        </a>
+        <a href="{{ url_for('osint_explorer', domain=target_domain, category='config') }}" 
+           class="nav-link {% if active_category == 'config' %}active{% endif %}" style="padding:0.65rem 0.85rem;">
+          <i data-lucide="shield-alert" style="width:16px;height:16px;"></i> Config &amp; Leaks
+        </a>
+        <a href="{{ url_for('osint_explorer', domain=target_domain, category='contact') }}" 
+           class="nav-link {% if active_category == 'contact' %}active{% endif %}" style="padding:0.65rem 0.85rem;">
+          <i data-lucide="users" style="width:16px;height:16px;"></i> Contact &amp; Personnel
+        </a>
+      </div>
+
+      <div style="margin-top:2rem; padding-top:1rem; border-top:1px solid var(--border-subtle); font-size:0.75rem; color:var(--text-dim); line-height:1.4;">
+        <i data-lucide="shield-check" style="width:14px;height:14px; color:var(--success-green);"></i>
+        <span>Defensive Use Only: Never attempt unauthorized access to discovered resources.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CENTER PANEL: DOMAIN & GENERATED QUERIES ==================== -->
+  <div class="workspace-center" style="flex:1; display:flex; flex-direction:column; gap:1.25rem;">
+    
+    <!-- Domain Input Card -->
+    <div class="sentrix-card">
+      <form action="{{ url_for('osint_explorer') }}" method="GET" style="display:flex; gap:0.75rem; align-items:center;">
+        <input type="hidden" name="category" value="{{ active_category }}">
+        <div style="flex:1; position:relative;">
+          <i data-lucide="globe" style="position:absolute; left:14px; top:12px; color:var(--text-dim); width:18px; height:18px;"></i>
+          <input type="text" name="domain" class="form-control form-control-mono" style="padding-left:2.6rem;" 
+                 placeholder="Enter target domain (e.g. tesla.com, microsoft.com)..." 
+                 value="{{ target_domain }}" required>
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <i data-lucide="sparkles" style="width:16px;height:16px;"></i> Generate Queries
+        </button>
+      </form>
+    </div>
+
+    <!-- Generated Query Results -->
+    {% if dork_results and dork_results.success %}
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.88rem; color:var(--text-muted);">
+          Generated <strong>{{ dork_results.total_queries }}</strong> queries for <code style="color:var(--cyan-electric);">{{ dork_results.domain }}</code>
+        </span>
+        <button class="btn btn-secondary btn-sm" onclick="copyAllQueries()">
+          <i data-lucide="copy" style="width:14px;height:14px;"></i> Copy All Queries
+        </button>
+      </div>
+
+      {% for cat in dork_results.categories %}
+        <div class="sentrix-card" style="margin-bottom:1rem;">
+          <div class="card-header" style="margin-bottom:0.75rem;">
+            <div class="card-title-group">
+              <div class="card-title-icon">
+                <i data-lucide="{{ cat.icon }}" style="width:16px;height:16px;"></i>
+              </div>
+              <div>
+                <h3 class="card-title" style="font-size:1rem;">{{ cat.category_title }}</h3>
+                <span class="card-subtitle">{{ cat.category_description }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:0.75rem;">
+            {% for q in cat.queries %}
+              <div style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); border-radius:10px; padding:0.85rem 1rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                  <span style="font-size:0.85rem; font-weight:700; color:var(--text-main);">{{ q.name }}</span>
+                  <div style="display:flex; gap:0.4rem;">
+                    <button class="btn btn-secondary btn-sm" onclick="window.copyToClipboard(this.getAttribute('data-query'), this)" data-query="{{ q.query }}" title="Copy query string">
+                      <i data-lucide="copy" style="width:12px;height:12px;"></i> Copy
+                    </button>
+                    <a href="{{ q.google_search_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" title="Execute in Google">
+                      <i data-lucide="external-link" style="width:12px;height:12px;"></i> Search
+                    </a>
+                  </div>
+                </div>
+
+                <div style="background:var(--bg-glass-input); border:1px solid var(--border-subtle); padding:0.5rem 0.75rem; border-radius:6px; font-family:var(--font-mono); font-size:0.82rem; color:var(--cyan-electric); word-break:break-all; margin-bottom:0.4rem;">
+                  {{ q.query }}
+                </div>
+
+                <div style="font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:0.4rem;">
+                  <i data-lucide="info" style="width:12px;height:12px; color:var(--text-dim);"></i>
+                  <span>{{ q.explanation }}</span>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+
+    {% else %}
+      <div class="sentrix-card" style="text-align:center; padding:3rem 2rem;">
+        <div style="width:52px; height:52px; border-radius:16px; background:rgba(0,213,255,0.1); color:var(--cyan-electric); display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+          <i data-lucide="terminal" style="width:28px;height:28px;"></i>
+        </div>
+        <h3 style="font-size:1.15rem; font-weight:700; margin-bottom:0.3rem;">Target Domain Required</h3>
+        <p style="color:var(--text-muted); font-size:0.85rem;">Enter any target domain above to synthesize defensive Google Dork queries.</p>
+      </div>
+    {% endif %}
+
+  </div>
+
+  <!-- ==================== RIGHT PANEL: OPERATOR EXPLANATIONS & EXPORT ==================== -->
+  <div class="workspace-right" style="width:300px; flex-shrink:0; display:flex; flex-direction:column; gap:1.25rem;">
+    
+    <!-- Export Box -->
+    <div class="sentrix-card">
+      <div class="card-header">
+        <h3 class="card-title" style="font-size:0.95rem;">Export Playbook</h3>
+      </div>
+      <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:1rem;">
+        Download the synthesized query manifest for external audits or terminal scripts.
+      </p>
+      <div style="display:flex; flex-direction:column; gap:0.5rem;">
+        <a href="{{ url_for('export_osint', domain=target_domain, format='txt') }}" class="btn btn-secondary btn-sm" style="width:100%; justify-content:flex-start;">
+          <i data-lucide="file-text" style="width:14px;height:14px;"></i> Download Text Playbook (.TXT)
+        </a>
+        <a href="{{ url_for('export_osint', domain=target_domain, format='csv') }}" class="btn btn-secondary btn-sm" style="width:100%; justify-content:flex-start;">
+          <i data-lucide="table" style="width:14px;height:14px;"></i> Download Spreadsheet (.CSV)
+        </a>
+      </div>
+    </div>
+
+    <!-- Search Operator Cheat Sheet -->
+    <div class="sentrix-card">
+      <div class="card-header">
+        <h3 class="card-title" style="font-size:0.95rem;">Operator Cheat Sheet</h3>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:0.6rem; font-size:0.8rem;">
+        <div>
+          <code style="color:var(--cyan-electric);">site:domain</code>
+          <p style="color:var(--text-dim); font-size:0.72rem;">Restricts search to specified domain</p>
+        </div>
+        <div>
+          <code style="color:var(--cyan-electric);">filetype:ext</code>
+          <p style="color:var(--text-dim); font-size:0.72rem;">Filters by extension (.pdf, .sql, .env)</p>
+        </div>
+        <div>
+          <code style="color:var(--cyan-electric);">inurl:keyword</code>
+          <p style="color:var(--text-dim); font-size:0.72rem;">Target keyword in URL path</p>
+        </div>
+        <div>
+          <code style="color:var(--cyan-electric);">intitle:"phrase"</code>
+          <p style="color:var(--text-dim); font-size:0.72rem;">Matches exact phrase in HTML title</p>
+        </div>
+        <div>
+          <code style="color:var(--cyan-electric);">intext:keyword</code>
+          <p style="color:var(--text-dim); font-size:0.72rem;">Matches content in body text</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  function copyAllQueries() {
+    const codeElems = document.querySelectorAll('.workspace-center code, .workspace-center [style*="font-family:var(--font-mono)"]');
+    const queries = [];
+    codeElems.forEach(el => {
+      const txt = el.textContent.trim();
+      if (txt && txt.startsWith('site:')) queries.push(txt);
+    });
+    if (queries.length > 0) {
+      window.copyToClipboard(queries.join('\n\n'));
+    } else {
+      window.showToast('No queries found to copy.', 'warning');
+    }
+  }
+</script>
+{% endblock %}

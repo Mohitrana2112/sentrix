@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}URL Analyzer – Deep Threat Intelligence{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+  <div style="display:flex; align-items:center; gap:0.6rem;">
+    <i data-lucide="shield-alert" style="color:var(--cyan-electric); width:28px; height:28px;"></i>
+    <h1 style="font-size:1.8rem; font-weight:800; letter-spacing:-0.02em;">Advanced URL Analyzer</h1>
+  </div>
+  <p style="color:var(--text-muted); font-size:0.92rem; margin-top:0.25rem;">
+    Deep heuristic inspection, syntax anatomy breakdown, brand typosquatting detection, and risk scoring.
+  </p>
+</div>
+
+<!-- ======================================================================
+     PREMIUM SPLIT-SCREEN INVESTIGATION WORKSPACE
+     ====================================================================== -->
+<div class="split-workspace" style="display:flex; gap:1.5rem; align-items:stretch;">
+
+  <!-- ==================== LEFT PANEL: URL INPUT & EXAMPLES ==================== -->
+  <div class="workspace-left" style="width:340px; flex-shrink:0; display:flex; flex-direction:column; gap:1.25rem;">
+
+    <div class="sentrix-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <div class="card-title-icon">
+            <i data-lucide="link-2" style="width:16px;height:16px;"></i>
+          </div>
+          <div>
+            <h3 class="card-title" style="font-size:0.95rem;">Target Specification</h3>
+            <span class="card-subtitle">Input URL for deep inspection</span>
+          </div>
+        </div>
+      </div>
+
+      <form id="urlAnalysisForm">
+        <div class="form-group">
+          <label class="form-label" for="targetUrlInput">URL to Analyze</label>
+          <textarea id="targetUrlInput" class="form-control form-control-mono" rows="3"
+            placeholder="https://example.com/path?arg=val" style="resize:vertical;"
+            required>{{ target_url or '' }}</textarea>
+        </div>
+
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+          <button type="submit" class="btn btn-primary" style="flex:1;">
+            <i data-lucide="scan-line" style="width:16px;height:16px;"></i> Analyze
+          </button>
+          <button type="button" id="clearUrlBtn" class="btn btn-secondary" title="Clear input">
+            <i data-lucide="rotate-ccw" style="width:16px;height:16px;"></i>
+          </button>
+        </div>
+      </form>
+
+      <!-- Scanning Progress Indicator -->
+      <div id="scanningIndicator" class="scanning-bar" style="margin-bottom:1rem;"></div>
+
+      <!-- Quick Scenario Examples -->
+      <div>
+        <label class="form-label" style="font-size:0.75rem;">Preset Threat Scenarios</label>
+        <div style="display:flex; flex-direction:column; gap:0.45rem;">
+          <div class="quick-sample-chip sample-url-chip"
+            data-url="https://paypa1-account-security-update.com/login?token=x991">
+            <strong>Typosquatting:</strong> paypa1-security.com
+          </div>
+          <div class="quick-sample-chip sample-url-chip"
+            data-url="http://192.168.1.50:8080/admin/payload.php?cmd=whoami">
+            <strong>Raw IP + Non-Std Port:</strong> 192.168.1.50:8080
+          </div>
+          <div class="quick-sample-chip sample-url-chip" data-url="https://bit.ly/3xSecurityUpdate">
+            <strong>URL Shortener:</strong> bit.ly/3xSecurityUpdate
+          </div>
+          <div class="quick-sample-chip sample-url-chip" data-url="https://xn--pple-43d.com/auth/login">
+            <strong>Punycode IDN:</strong> xn--pple-43d.com
+          </div>
+          <div class="quick-sample-chip sample-url-chip" data-url="https://google.com@evil-phish-domain.xyz/login">
+            <strong>Embedded Userinfo (@):</strong> google.com@evil.xyz
+          </div>
+          <div class="quick-sample-chip sample-url-chip" data-url="https://github.com/torvalds/linux">
+            <strong>Legitimate Baseline:</strong> github.com
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Security Advisory Disclaimer Card -->
+    <div class="sentrix-card" style="border-left: 3px solid var(--warning-amber); padding:1rem;">
+      <div
+        style="display:flex; align-items:center; gap:0.5rem; color:var(--warning-amber); font-weight:700; font-size:0.82rem; margin-bottom:0.3rem;">
+        <i data-lucide="alert-circle" style="width:16px;height:16px;"></i>
+        <span>ANALYST NOTICE</span>
+      </div>
+      <p style="font-size:0.75rem; color:var(--text-muted); line-height:1.4;">
+        SENTRIX performs static, structural and heuristic analysis. Absence of detected patterns does not guarantee a
+        clean executable. Always practice defense-in-depth.
+      </p>
+    </div>
+  </div>
+
+  <!-- ==================== CENTER & RIGHT: ANALYSIS RESULTS WORKSPACE ==================== -->
+  <div class="workspace-main" style="flex:1; display:flex; flex-direction:column;">
+
+    <!-- Empty State Before Analysis -->
+    <div id="analyzerEmptyState" class="sentrix-card"
+      style="text-align:center; padding:4rem 2rem; margin:auto; max-width:600px;">
+      <div
+        style="width:64px; height:64px; border-radius:20px; background:rgba(0,213,255,0.1); color:var(--cyan-electric); display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem;">
+        <i data-lucide="crosshair" style="width:36px;height:36px;"></i>
+      </div>
+      <h2 style="font-size:1.4rem; font-weight:800; margin-bottom:0.5rem;">Awaiting Target URL</h2>
+      <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1.5rem; line-height:1.5;">
+        Enter a target URL or choose a preset threat scenario from the left panel to begin dissection and heuristic risk
+        scoring.
+      </p>
+      <div
+        style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.8rem; color:var(--text-dim); background:var(--bg-surface-elevated); padding:0.4rem 0.85rem; border-radius:8px;">
+        <i data-lucide="info" style="width:14px;height:14px;"></i>
+        <span>SSRF Guard active &bull; DNS rebinding defense enabled</span>
+      </div>
+    </div>
+
+    <!-- Active Results Container (Rendered dynamically) -->
+    <div id="analyzerResults" style="display:none;">
+
+      <!-- Top Bar: Risk Verdict Banner -->
+      <div class="sentrix-card"
+        style="margin-bottom:1.25rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; padding:1.2rem 1.4rem;">
+        <div>
+          <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.35rem; flex-wrap:wrap;">
+            <span id="riskClassificationBadge" class="risk-badge risk-badge-low">LOW RISK</span>
+            <span id="riskConfidenceBadge" class="confidence-pill pill-high">HIGH CONFIDENCE</span>
+            <span style="font-size:0.75rem; color:var(--text-dim); font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.04em;">Heuristic Score</span>
+          </div>
+          <div id="riskSummaryText" style="font-size:0.88rem; color:var(--text-main); max-width:650px; line-height:1.45;">
+            Preliminary static evaluation complete.
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:1.25rem; flex-wrap:wrap;">
+          <div style="text-align:right;">
+            <div style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; font-weight:700; letter-spacing:0.04em;">Risk Factor</div>
+            <div style="font-size:2.2rem; font-weight:900; line-height:1; color:var(--cyan-electric);">
+              <span id="riskScoreValue">0</span><span style="font-size:1.1rem; color:var(--text-dim);">/100</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+            <button type="button" class="btn btn-secondary btn-sm" id="analyzerCopyTargetBtn" title="Copy Target URL">
+              <i data-lucide="copy" style="width:13px;height:13px;"></i> Copy URL
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="analyzerCopyDomainBtn" title="Copy Registered Domain">
+              <i data-lucide="globe" style="width:13px;height:13px;"></i> Copy Domain
+            </button>
+            <a id="analyzerDomainIntelLink" href="#" class="btn btn-secondary btn-sm" title="Investigate Domain in Sentinel">
+              <i data-lucide="network" style="width:13px;height:13px;"></i> Domain Intel
+            </a>
+            <button type="button" class="btn btn-secondary btn-sm" id="analyzerAskAiBtn" style="border-color:var(--violet-neon); color:var(--violet-neon);" title="Ask SENTRIX AI about this URL">
+              <i data-lucide="bot" style="width:13px;height:13px;"></i> Ask AI
+            </button>
+            <a id="downloadPdfBtn" href="#" class="btn btn-primary btn-sm" style="display:none;" target="_blank">
+              <i data-lucide="file-down" style="width:13px;height:13px;"></i> Export PDF
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Split Layout: Center (Anatomy & IP Intel) & Right (Findings & Defensive) -->
+      <div style="display:grid; grid-template-columns: 1.15fr 1fr; gap:1.25rem; align-items:start;">
+
+        <!-- ==================== CENTER COLUMN: ANATOMY & IP INTEL ==================== -->
+        <div style="display:flex; flex-direction:column; gap:1.25rem;">
+          <!-- Anatomy Card -->
+          <div class="sentrix-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="card-title-icon">
+                  <i data-lucide="layers" style="width:16px;height:16px;"></i>
+                </div>
+                <div>
+                  <h3 class="card-title" style="font-size:0.95rem;">Interactive URL Anatomy</h3>
+                  <span class="card-subtitle">Syntactical element decomposition</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Highlighted Full URL -->
+            <div
+              style="background:var(--bg-glass-input); border:1px solid var(--border-subtle); border-radius:10px; padding:0.85rem; margin-bottom:1.25rem; word-break:break-all; font-family:var(--font-mono); font-size:0.85rem;">
+              <span id="anatFullUrl" style="color:var(--cyan-electric); font-weight:600;"></span>
+            </div>
+
+            <!-- Anatomy Properties Table -->
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+              <tbody>
+                <tr style="border-bottom:1px solid var(--border-subtle);">
+                  <td style="padding:0.5rem 0; color:var(--text-muted); width:130px;">Protocol</td>
+                  <td style="padding:0.5rem 0; font-family:var(--font-mono); font-weight:700;" id="anatProtocol"></td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border-subtle);">
+                  <td style="padding:0.5rem 0; color:var(--text-muted);">Subdomain</td>
+                  <td style="padding:0.5rem 0; font-family:var(--font-mono);" id="anatSubdomain"></td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border-subtle);">
+                  <td style="padding:0.5rem 0; color:var(--text-muted);">Registered Domain</td>
+                  <td style="padding:0.5rem 0; font-family:var(--font-mono); font-weight:700; color:var(--cyan-electric);"
+                    id="anatDomain"></td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border-subtle);">
+                  <td style="padding:0.5rem 0; color:var(--text-muted);">TLD</td>
+                  <td style="padding:0.5rem 0; font-family:var(--font-mono);" id="anatTld"></td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border-subtle);">
+                  <td style="padding:0.5rem 0; color:var(--text-muted);">Port</td>
+                  <td style="padding:0.5rem 0; font-family:var(--font-mono);" id="anatPort"></td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border-subtle);">
+                  <td style="padding:0.5rem 0; color:var(--text-muted);">Path</td>
+                  <td style="padding:0.5rem 0; font-family:var(--font-mono); word-break:break-all;" id="anatPath"></td>
+                </tr>
+                <tr style="border-bottom:1px solid var(--border-subtle);">
+                  <td style="padding:0.5rem 0; color:var(--text-muted);">Fragment</td>
+                  <td style="padding:0.5rem 0; font-family:var(--font-mono);" id="anatFragment"></td>
+                </tr>
+                <tr>
+                  <td style="padding:0.5rem 0; color:var(--text-muted);">Shannon Entropy</td>
+                  <td style="padding:0.5rem 0; font-family:var(--font-mono); color:var(--violet-neon);" id="anatEntropy">
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Query Parameters Breakdown -->
+            <div style="margin-top:1.25rem;">
+              <label class="form-label" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;">Query Parameters</label>
+              <div id="anatQueryParams" style="display:flex; flex-wrap:wrap; gap:5px;"></div>
+            </div>
+          </div>
+
+          <!-- Dual-Stack IP Intelligence Card -->
+          <div class="sentrix-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="card-title-icon" style="background:rgba(0,184,217,0.12); color:var(--cyan-electric);">
+                  <i data-lucide="server" style="width:16px;height:16px;"></i>
+                </div>
+                <div>
+                  <h3 class="card-title" style="font-size:0.95rem;">Dual-Stack IP Intelligence</h3>
+                  <span class="card-subtitle">Resolved host addresses &amp; network class</span>
+                </div>
+              </div>
+              <span id="analyzerDnsBadge" class="dns-status-pill pill-resolved">RESOLVED</span>
+            </div>
+
+            <div style="overflow-x:auto;">
+              <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border-subtle); color:var(--text-dim); text-align:left;">
+                    <th style="padding:0.4rem 0.3rem;">Address</th>
+                    <th style="padding:0.4rem 0.3rem;">Ver</th>
+                    <th style="padding:0.4rem 0.3rem;">Network Class</th>
+                    <th style="padding:0.4rem 0.3rem;">Reverse PTR</th>
+                  </tr>
+                </thead>
+                <tbody id="analyzerIpTableBody">
+                  <!-- Rendered via JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.85rem; padding-top:0.6rem; border-top:1px solid var(--border-subtle);">
+              <span id="analyzerIpTimestamp" style="font-size:0.72rem; color:var(--text-dim);">DNS Lookup: Real-time</span>
+              <button type="button" class="btn btn-secondary btn-sm" id="analyzerCopyIpBtn" style="font-size:0.7rem; padding:2px 7px;">
+                <i data-lucide="copy" style="width:11px;height:11px;"></i> Copy IP
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== RIGHT COLUMN: HEURISTIC FINDINGS & ACTIONS ==================== -->
+        <div style="display:flex; flex-direction:column; gap:1.25rem;">
+          <!-- Findings List -->
+          <div class="sentrix-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="card-title-icon" style="background:rgba(255,82,99,0.12); color:var(--danger-red);">
+                  <i data-lucide="alert-triangle" style="width:16px;height:16px;"></i>
+                </div>
+                <div>
+                  <h3 class="card-title" style="font-size:0.95rem;">Security Indicators</h3>
+                  <span class="card-subtitle">Technical findings &amp; evidence</span>
+                </div>
+              </div>
+              <span id="analyzerIndicatorCount" class="badge-counter">0 Findings</span>
+            </div>
+
+            <div id="findingsListContainer" style="display:flex; flex-direction:column; gap:0.75rem; max-height:450px; overflow-y:auto; padding-right:4px;"></div>
+          </div>
+
+          <!-- Defensive Recommendations -->
+          <div class="sentrix-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="card-title-icon" style="background:rgba(33,212,165,0.12); color:var(--success-green);">
+                  <i data-lucide="shield-check" style="width:16px;height:16px;"></i>
+                </div>
+                <div>
+                  <h3 class="card-title" style="font-size:0.95rem;">Recommended Defensive Actions</h3>
+                  <span class="card-subtitle">Operational precautions for analysts</span>
+                </div>
+              </div>
+            </div>
+
+            <ul id="recommendationsList" class="live-recs-list"></ul>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/analyzer.js') }}"></script>
+{% endblock %}

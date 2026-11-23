@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SENTRIX{% endblock %} – Security Analysis &amp; URL Intelligence</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+
+  <!-- Typography: Google Fonts (Inter & JetBrains Mono) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <!-- Application Stylesheets -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+
+  <!-- ======================================================================
+       FIXED HORIZONTAL NAVIGATION BAR (TOP ONLY)
+       ====================================================================== -->
+  <header class="sentrix-navbar">
+    <!-- LEFT SECTION: Logo, Wordmark, Version -->
+    <div class="nav-left">
+      <a href="{{ url_for('dashboard') }}" class="nav-brand">
+        <img src="{{ url_for('static', filename='images/sentrix-logo-dark.svg') }}" alt="SENTRIX Logo" class="brand-logo-dark">
+        <img src="{{ url_for('static', filename='images/sentrix-logo-light.svg') }}" alt="SENTRIX Logo" class="brand-logo-light">
+        <span class="version-pill">v2.5 PRO</span>
+      </a>
+    </div>
+
+    <!-- CENTER SECTION: Core Navigation Links -->
+    <nav class="nav-center">
+      <a href="{{ url_for('dashboard') }}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">
+        <i data-lucide="layout-dashboard" style="width:16px;height:16px;"></i>
+        <span>Overview</span>
+      </a>
+      <a href="{{ url_for('osint_explorer') }}" class="nav-link {% if active_page == 'osint' %}active{% endif %}">
+        <i data-lucide="crosshair" style="width:16px;height:16px;"></i>
+        <span>OSINT Explorer</span>
+      </a>
+      <a href="{{ url_for('url_analyzer') }}" class="nav-link {% if active_page == 'url_analyzer' %}active{% endif %}">
+        <i data-lucide="shield-alert" style="width:16px;height:16px;"></i>
+        <span>URL Analyzer</span>
+      </a>
+      <a href="{{ url_for('domain_intel') }}" class="nav-link {% if active_page == 'domain_intel' %}active{% endif %}">
+        <i data-lucide="globe" style="width:16px;height:16px;"></i>
+        <span>Domain Intelligence</span>
+      </a>
+      <a href="{{ url_for('query_generator') }}"
+        class="nav-link {% if active_page == 'query_generator' %}active{% endif %}">
+        <i data-lucide="terminal" style="width:16px;height:16px;"></i>
+        <span>Query Generator</span>
+      </a>
+      <a href="{{ url_for('reports_view') }}" class="nav-link {% if active_page == 'reports' %}active{% endif %}">
+        <i data-lucide="file-check" style="width:16px;height:16px;"></i>
+        <span>Reports</span>
+      </a>
+    </nav>
+
+    <!-- RIGHT SECTION: Search Pill, Notifications, Theme, AI, User -->
+    <div class="nav-right">
+      <!-- Global Search Pill Trigger -->
+      <div class="nav-search-pill trigger-global-search" title="Global Investigation Search (Ctrl+K)">
+        <i data-lucide="search" style="width:15px;height:15px;"></i>
+        <span>Search target...</span>
+        <kbd class="search-kbd">Ctrl K</kbd>
+      </div>
+
+      <!-- Theme Toggle Button -->
+      <button id="themeToggleBtn" class="nav-btn" title="Toggle Theme (Dark/Light)">
+        <i data-lucide="sun" style="width:18px;height:18px;"></i>
+      </button>
+
+      <!-- SENTRIX AI Assistant Trigger -->
+      <button id="navAiAssistantBtn" class="nav-btn" title="SENTRIX AI Assistant"
+        onclick="document.getElementById('chatbotLauncherBtn').click()">
+        <i data-lucide="bot" style="width:18px;height:18px; color:var(--cyan-electric);"></i>
+        <span class="badge-dot"></span>
+      </button>
+
+      <!-- Settings / Profile Menu -->
+      <a href="{{ url_for('settings_view') }}" class="user-profile-chip" title="Analyst Settings">
+        <div class="user-avatar">SA</div>
+        <div class="user-info-text">
+          <span class="user-name">{{ user_settings.analyst_name if user_settings else 'SEC-ANALYST' }}</span>
+          <span class="user-role">DEFENSIVE SOC</span>
+        </div>
+      </a>
+
+      <!-- Mobile Hamburger Toggle -->
+      <button id="mobileToggleBtn" class="mobile-toggle" aria-label="Toggle Navigation">
+        <i data-lucide="menu" style="width:24px;height:24px;"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer Menu -->
+  <div id="mobileNavDrawer" class="mobile-nav-drawer">
+    <a href="{{ url_for('dashboard') }}" class="mobile-nav-link {% if active_page == 'dashboard' %}active{% endif %}">
+      <i data-lucide="layout-dashboard"></i> Overview
+    </a>
+    <a href="{{ url_for('osint_explorer') }}" class="mobile-nav-link {% if active_page == 'osint' %}active{% endif %}">
+      <i data-lucide="crosshair"></i> OSINT Explorer
+    </a>
+    <a href="{{ url_for('url_analyzer') }}"
+      class="mobile-nav-link {% if active_page == 'url_analyzer' %}active{% endif %}">
+      <i data-lucide="shield-alert"></i> URL Analyzer
+    </a>
+    <a href="{{ url_for('domain_intel') }}"
+      class="mobile-nav-link {% if active_page == 'domain_intel' %}active{% endif %}">
+      <i data-lucide="globe"></i> Domain Intelligence
+    </a>
+    <a href="{{ url_for('query_generator') }}"
+      class="mobile-nav-link {% if active_page == 'query_generator' %}active{% endif %}">
+      <i data-lucide="terminal"></i> Query Generator
+    </a>
+    <a href="{{ url_for('reports_view') }}" class="mobile-nav-link {% if active_page == 'reports' %}active{% endif %}">
+      <i data-lucide="file-check"></i> Reports
+    </a>
+    <a href="{{ url_for('settings_view') }}"
+      class="mobile-nav-link {% if active_page == 'settings' %}active{% endif %}">
+      <i data-lucide="settings"></i> Settings &amp; API Keys
+    </a>
+  </div>
+
+  <!-- ======================================================================
+       MAIN CONTENT CONTAINER
+       ====================================================================== -->
+  <div class="sentrix-app-wrapper">
+    <main class="content-container">
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, message in messages %}
+      {% set alert_color = 'danger-red' if category == 'error' else ('success-green' if category == 'success' else 'cyan-electric') %}
+      {% set alert_icon = 'alert-triangle' if category == 'error' else ('check-circle' if category == 'success' else 'info') %}
+      <div class="sentrix-card border-left-{{ alert_color }}" style="margin-bottom: 1.5rem; padding: 0.85rem 1.25rem;">
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <i data-lucide="{{ alert_icon }}" style="width:18px;height:18px;"></i>
+          <span>{{ message }}</span>
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+
+    <!-- ====================================================================
+         FOOTER
+         ==================================================================== -->
+    <footer class="sentrix-footer">
+      <div class="footer-inner">
+        <div class="footer-left">
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <img src="{{ url_for('static', filename='images/sentrix-icon.svg') }}" alt="SENTRIX"
+              style="width:20px;height:20px;">
+            <span
+              style="font-weight:800; font-size:0.95rem; letter-spacing:0.08em; color:var(--text-main);">SENTRIX</span>
+          </div>
+          <div class="footer-tagline">INVESTIGATE. ANALYZE. UNDERSTAND. PROTECT.</div>
+          <div class="footer-copy">&copy; 2026 SENTRIX Security Intelligence Platform. Strictly for authorized defensive
+            research.</div>
+        </div>
+        <div class="footer-links">
+          <a href="{{ url_for('dashboard') }}">Overview</a>
+          <a href="{{ url_for('url_analyzer') }}">URL Analyzer</a>
+          <a href="{{ url_for('domain_intel') }}">Domain Intelligence</a>
+          <a href="{{ url_for('osint_explorer') }}">OSINT Explorer</a>
+          <a href="{{ url_for('reports_view') }}">Reports</a>
+          <a href="{{ url_for('settings_view') }}">Settings</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ======================================================================
+       GLOBAL SEARCH MODAL (CTRL + K)
+       ====================================================================== -->
+  <div id="searchModal" class="sentrix-modal-overlay">
+    <div class="sentrix-modal">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <i data-lucide="search" style="color:var(--cyan-electric);"></i>
+          <h3 style="font-size:1.05rem; font-weight:700;">Global Security Investigation</h3>
+        </div>
+        <button id="closeSearchModalBtn" class="nav-btn" style="width:30px;height:30px;">
+          <i data-lucide="x" style="width:16px;height:16px;"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="globalModalForm">
+          <div class="form-group" style="margin-bottom:1rem;">
+            <input type="text" id="globalSearchInput" class="form-control form-control-mono"
+              placeholder="Enter target URL (e.g. https://target.com/login) or domain name..." autofocus>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.75rem; color:var(--text-dim);">Press <kbd class="search-kbd">ESC</kbd> to
+              exit</span>
+            <button type="submit" class="btn btn-primary btn-sm">
+              <i data-lucide="arrow-right" style="width:14px;height:14px;"></i> Investigate
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       FLOATING SENTRIX AI CHATBOT WIDGET
+       ====================================================================== -->
+  <div class="chatbot-float-launcher">
+    <div id="chatbotLauncherBtn" class="chatbot-toggle-btn" title="SENTRIX AI Copilot">
+      <span class="pulse-ring"></span>
+      <i data-lucide="shield" style="width:26px;height:26px;"></i>
+    </div>
+  </div>
+
+  <div id="chatbotWindow" class="chatbot-window">
+    <div class="chat-header">
+      <div class="chat-header-title">
+        <span class="chat-status-indicator"></span>
+        <div>
+          <h4 style="font-size:0.92rem; font-weight:800; color:var(--text-main); line-height:1.1;">SENTRIX AI</h4>
+          <span style="font-size:0.7rem; color:var(--cyan-electric);">SECURITY SPECIALIST</span>
+        </div>
+      </div>
+      <div style="display:flex; gap:0.35rem;">
+        <button id="clearChatbotBtn" class="nav-btn" style="width:28px;height:28px;" title="Reset chat">
+          <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+        </button>
+        <button id="closeChatbotBtn" class="nav-btn" style="width:28px;height:28px;" title="Minimize">
+          <i data-lucide="minus" style="width:14px;height:14px;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Chat Messages Body -->
+    <div id="chatbotBody" class="chat-body">
+      <div class="chat-msg assistant">
+        <div class="chat-bubble">
+          <strong>SENTRIX AI</strong> active. I am your defensive cybersecurity intelligence co-pilot. Submit a URL for
+          analysis, ask about DNS records, explain phishing patterns, or request Google Dorking operators.
+        </div>
+      </div>
+    </div>
+
+    <!-- Suggested Quick Prompts -->
+    <div class="chat-quick-prompts">
+      <div class="prompt-pill" data-prompt="Analyze this suspicious URL">Analyze URL</div>
+      <div class="prompt-pill" data-prompt="What is Google Dorking?">Google Dorking</div>
+      <div class="prompt-pill" data-prompt="Explain DNS records">DNS Records</div>
+      <div class="prompt-pill" data-prompt="How can I identify phishing URLs?">Phishing Patterns</div>
+      <div class="prompt-pill" data-prompt="Explain HTTP security headers">Security Headers</div>
+    </div>
+
+    <!-- Chat Input Area -->
+    <div class="chat-input-area">
+      <input type="text" id="chatbotInput" class="chat-input" placeholder="Ask SENTRIX AI a security question...">
+      <button id="chatbotSendBtn" class="btn btn-primary btn-sm" style="padding:0.5rem 0.85rem;">
+        <i data-lucide="send" style="width:14px;height:14px;"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+
+</html>

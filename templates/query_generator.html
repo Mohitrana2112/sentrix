@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Query Generator – Interactive Google Dork Builder{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+  <div style="display:flex; align-items:center; gap:0.6rem;">
+    <i data-lucide="terminal" style="color:var(--cyan-electric); width:28px; height:28px;"></i>
+    <h1 style="font-size:1.8rem; font-weight:800; letter-spacing:-0.02em;">Interactive Query Generator</h1>
+  </div>
+  <p style="color:var(--text-muted); font-size:0.92rem; margin-top:0.25rem;">
+    Build targeted defensive Google Dorks using interactive operator blocks, keyword injection, and live previews.
+  </p>
+</div>
+
+<div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:1.5rem;" class="bento-row-equal">
+  
+  <!-- LEFT: Interactive Query Builder Form -->
+  <div class="sentrix-card">
+    <div class="card-header">
+      <div class="card-title-group">
+        <div class="card-title-icon">
+          <i data-lucide="wrench" style="width:16px;height:16px;"></i>
+        </div>
+        <div>
+          <h3 class="card-title">Dork Builder Canvas</h3>
+          <span class="card-subtitle">Combine search operators dynamically</span>
+        </div>
+      </div>
+    </div>
+
+    <form id="dorkBuilderForm">
+      <div class="form-group">
+        <label class="form-label" for="builderDomain">Target Domain (site:)</label>
+        <input type="text" id="builderDomain" class="form-control form-control-mono" placeholder="example.com" value="{{ target_domain or '' }}">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Research Objective Preset</label>
+        <select id="builderPreset" class="form-control">
+          <option value="custom">Custom Configuration</option>
+          <option value="env_files">Exposed .env &amp; Secrets (filetype:env)</option>
+          <option value="database_dumps">Database Migration &amp; Dumps (filetype:sql)</option>
+          <option value="login_portals">Administrative &amp; SSO Logins (inurl:admin)</option>
+          <option value="open_dirs">Directory Indexing (intitle:"Index of /")</option>
+          <option value="git_repos">Exposed Version Control (.git folders)</option>
+          <option value="api_docs">API Specs &amp; Swagger (inurl:api-docs)</option>
+        </select>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+        <div class="form-group">
+          <label class="form-label" for="builderFiletype">File Extension (filetype:)</label>
+          <input type="text" id="builderFiletype" class="form-control form-control-mono" placeholder="pdf, sql, env, log, conf">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="builderInurl">URL Keywords (inurl:)</label>
+          <input type="text" id="builderInurl" class="form-control form-control-mono" placeholder="admin, login, backup, portal">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+        <div class="form-group">
+          <label class="form-label" for="builderIntitle">Title Keywords (intitle:)</label>
+          <input type="text" id="builderIntitle" class="form-control" placeholder='"Index of /", "Dashboard"'>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="builderIntext">Body Text (intext:)</label>
+          <input type="text" id="builderIntext" class="form-control" placeholder='"DB_PASSWORD", "internal"'>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="builderCustomKeywords">Additional Raw Search Terms / Booleans</label>
+        <input type="text" id="builderCustomKeywords" class="form-control" placeholder='OR "confidential" -site:www.example.com'>
+      </div>
+
+      <div style="display:flex; gap:0.5rem; margin-top:1.5rem;">
+        <button type="button" id="buildQueryBtn" class="btn btn-primary" style="flex:1;">
+          <i data-lucide="sparkles" style="width:16px;height:16px;"></i> Synthesize Dork
+        </button>
+        <button type="reset" class="btn btn-secondary">
+          <i data-lucide="rotate-ccw" style="width:16px;height:16px;"></i> Reset
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- RIGHT: Live Query Preview & Execution -->
+  <div style="display:flex; flex-direction:column; gap:1.25rem;">
+    
+    <div class="sentrix-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <div class="card-title-icon" style="background:rgba(33,212,165,0.12); color:var(--success-green);">
+            <i data-lucide="play" style="width:16px;height:16px;"></i>
+          </div>
+          <div>
+            <h3 class="card-title">Live Query Preview</h3>
+            <span class="card-subtitle">Editable search payload</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <textarea id="liveQueryPreview" class="form-control form-control-mono" rows="4" 
+                  style="font-size:0.95rem; color:var(--cyan-electric); font-weight:600; line-height:1.4;"></textarea>
+      </div>
+
+      <div style="display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap;">
+        <button id="copyLiveQueryBtn" class="btn btn-secondary btn-sm">
+          <i data-lucide="copy" style="width:14px;height:14px;"></i> Copy Query
+        </button>
+        <button id="openLiveGoogleBtn" class="btn btn-outline btn-sm">
+          <i data-lucide="external-link" style="width:14px;height:14px;"></i> Open in Google
+        </button>
+        <button id="saveQueryTemplateBtn" class="btn btn-secondary btn-sm">
+          <i data-lucide="bookmark" style="width:14px;height:14px;"></i> Save Query
+        </button>
+      </div>
+
+      <div style="background:rgba(0,213,255,0.06); border-left:3px solid var(--cyan-electric); padding:0.75rem 1rem; border-radius:6px; font-size:0.8rem; color:var(--text-main);">
+        <strong>Synthesizer Logic:</strong> <span id="queryExplanationText">Awaiting operator synthesis...</span>
+      </div>
+    </div>
+
+    <!-- Beginner Operator Guide Card -->
+    <div class="sentrix-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <div class="card-title-icon">
+            <i data-lucide="help-circle" style="width:16px;height:16px;"></i>
+          </div>
+          <div>
+            <h3 class="card-title">Operator Reference Guide</h3>
+            <span class="card-subtitle">Understanding syntax semantics</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:0.65rem; font-size:0.82rem;">
+        <div>
+          <strong style="color:var(--cyan-electric);">site:</strong>
+          <span style="color:var(--text-muted);">Limits discovery to the exact domain or wildcard subdomain (e.g. <code>site:*.target.com</code>).</span>
+        </div>
+        <div>
+          <strong style="color:var(--cyan-electric);">filetype:</strong>
+          <span style="color:var(--text-muted);">Matches based on file extension parsing in Google index (e.g. <code>filetype:env</code>).</span>
+        </div>
+        <div>
+          <strong style="color:var(--cyan-electric);">inurl:</strong>
+          <span style="color:var(--text-muted);">Restricts results to documents with the specified string in their URI path.</span>
+        </div>
+        <div>
+          <strong style="color:var(--cyan-electric);">intitle:</strong>
+          <span style="color:var(--text-muted);">Enforces that the HTML title element must contain the search phrase.</span>
+        </div>
+        <div>
+          <strong style="color:var(--cyan-electric);">Boolean Operators:</strong>
+          <span style="color:var(--text-muted);">Use capitalized <code>OR</code> for alternatives, quotation marks <code>"..."</code> for exact matches, and <code>-</code> to exclude terms.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const domainInput = document.getElementById('builderDomain');
+    const presetSelect = document.getElementById('builderPreset');
+    const filetypeInput = document.getElementById('builderFiletype');
+    const inurlInput = document.getElementById('builderInurl');
+    const intitleInput = document.getElementById('builderIntitle');
+    const intextInput = document.getElementById('builderIntext');
+    const customInput = document.getElementById('builderCustomKeywords');
+    const previewArea = document.getElementById('liveQueryPreview');
+    const explanationText = document.getElementById('queryExplanationText');
+
+    const presets = {
+      env_files: {
+        filetype: 'env',
+        intext: '"DB_PASSWORD" OR "SECRET_KEY"',
+        desc: 'Searches for unmasked environment files that may leak API secrets and database passwords.'
+      },
+      database_dumps: {
+        filetype: 'sql',
+        intext: '"INSERT INTO" OR "CREATE TABLE"',
+        desc: 'Locates accidental database migration scripts and SQL schema backups.'
+      },
+      login_portals: {
+        inurl: 'admin OR login OR portal',
+        desc: 'Surfaces single sign-on points and administrative panels.'
+      },
+      open_dirs: {
+        intitle: '"Index of /"',
+        desc: 'Finds servers with directory indexing enabled exposing raw file trees.'
+      },
+      git_repos: {
+        inurl: '.git OR .svn',
+        desc: 'Checks if version control directories were accidentally pushed to the web root.'
+      },
+      api_docs: {
+        inurl: 'swagger OR api-docs',
+        intitle: '"Swagger UI"',
+        desc: 'Discovers API documentation describing parameters and endpoint schemas.'
+      }
+    };
+
+    presetSelect.addEventListener('change', () => {
+      const val = presetSelect.value;
+      if (presets[val]) {
+        filetypeInput.value = presets[val].filetype || '';
+        inurlInput.value = presets[val].inurl || '';
+        intitleInput.value = presets[val].intitle || '';
+        intextInput.value = presets[val].intext || '';
+        explanationText.textContent = presets[val].desc;
+      }
+      buildQuery();
+    });
+
+    function buildQuery() {
+      const parts = [];
+      const dom = (domainInput.value || '').trim();
+      if (dom) parts.push(`site:${dom}`);
+
+      const ft = (filetypeInput.value || '').trim();
+      if (ft) parts.push(`filetype:${ft}`);
+
+      const iu = (inurlInput.value || '').trim();
+      if (iu) parts.push(`inurl:${iu}`);
+
+      const it = (intitleInput.value || '').trim();
+      if (it) parts.push(`intitle:${it}`);
+
+      const ix = (intextInput.value || '').trim();
+      if (ix) parts.push(`intext:${ix}`);
+
+      const cust = (customInput.value || '').trim();
+      if (cust) parts.push(cust);
+
+      const fullQuery = parts.join(' ');
+      previewArea.value = fullQuery || 'site:example.com filetype:pdf "confidential"';
+      if (!explanationText.textContent || explanationText.textContent.startsWith('Awaiting')) {
+        explanationText.textContent = 'Custom operator combination assembled.';
+      }
+    }
+
+    document.getElementById('buildQueryBtn').addEventListener('click', buildQuery);
+    domainInput.addEventListener('input', buildQuery);
+
+    document.getElementById('copyLiveQueryBtn').addEventListener('click', () => {
+      window.copyToClipboard(previewArea.value, document.getElementById('copyLiveQueryBtn'));
+    });
+
+    document.getElementById('openLiveGoogleBtn').addEventListener('click', () => {
+      const q = encodeURIComponent(previewArea.value);
+      window.open(`https://www.google.com/search?q=${q}`, '_blank');
+    });
+
+    document.getElementById('saveQueryTemplateBtn').addEventListener('click', async () => {
+      const q = previewArea.value.trim();
+      const dom = domainInput.value.trim() || 'General';
+      if (!q) return;
+
+      try {
+        const resp = await fetch('/api/save-query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            domain: dom,
+            query_title: 'Custom Synthesized Dork',
+            query_text: q,
+            category: 'Custom'
+          })
+        });
+        const data = await resp.json();
+        if (data.success) {
+          window.showToast('Query saved to investigation archive!', 'success');
+        }
+      } catch (e) {
+        window.showToast('Failed to save query', 'error');
+      }
+    });
+
+    buildQuery();
+  });
+</script>
+{% endblock %}

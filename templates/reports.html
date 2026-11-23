@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Investigation Reports – Audit Archive{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:1rem;">
+  <div>
+    <div style="display:flex; align-items:center; gap:0.6rem;">
+      <i data-lucide="file-check" style="color:var(--cyan-electric); width:28px; height:28px;"></i>
+      <h1 style="font-size:1.8rem; font-weight:800; letter-spacing:-0.02em;">Investigation Reports</h1>
+    </div>
+    <p style="color:var(--text-muted); font-size:0.92rem; margin-top:0.25rem;">
+      Archived security assessments, downloadable executive PDF reports, and telemetry exports.
+    </p>
+  </div>
+
+  <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+    <button class="btn btn-secondary btn-sm" onclick="window.print()">
+      <i data-lucide="printer" style="width:14px;height:14px;"></i> Print View
+    </button>
+    <button class="btn btn-secondary btn-sm" onclick="clearAllReports()" style="color:var(--danger-red); border-color:rgba(255,82,99,0.35);">
+      <i data-lucide="trash" style="width:14px;height:14px;"></i> Clear All Archive
+    </button>
+  </div>
+</div>
+
+<!-- ======================================================================
+     INVESTIGATION HISTORY ARCHIVE TABLE
+     ====================================================================== -->
+<div class="sentrix-card">
+  <div class="card-header">
+    <div class="card-title-group">
+      <div class="card-title-icon">
+        <i data-lucide="database" style="width:16px;height:16px;"></i>
+      </div>
+      <div>
+        <h3 class="card-title">Completed Case Archives</h3>
+        <span class="card-subtitle">Select an investigation to download structured audit files or manage history</span>
+      </div>
+    </div>
+    <span id="reportsCountBadge" class="badge-counter" style="font-size:0.75rem;">{{ investigations|length }} Cases</span>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.88rem;">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border-subtle); color:var(--text-dim); text-align:left;">
+          <th style="padding:0.75rem 0.5rem;">Case ID</th>
+          <th style="padding:0.75rem 0.5rem;">Target Entity</th>
+          <th style="padding:0.75rem 0.5rem;">Type</th>
+          <th style="padding:0.75rem 0.5rem;">Risk Score</th>
+          <th style="padding:0.75rem 0.5rem;">Verdict</th>
+          <th style="padding:0.75rem 0.5rem;">Timestamp</th>
+          <th style="padding:0.75rem 0.5rem; text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="reportsTableBody">
+        {% for inv in investigations %}
+          <tr id="reportRow_{{ inv.uuid }}" style="border-bottom:1px solid var(--border-subtle); transition:all 0.3s ease;">
+            <td style="padding:0.85rem 0.5rem; font-family:var(--font-mono); font-weight:700; color:var(--cyan-electric);">
+              {{ inv.uuid }}
+            </td>
+            <td style="padding:0.85rem 0.5rem; font-family:var(--font-mono); color:var(--text-main);">
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span title="{{ inv.target_input }}">{{ inv.target_input[:36] }}{% if inv.target_input|length > 36 %}...{% endif %}</span>
+                {% if inv.is_demo %}
+                  <span class="demo-badge">DEMO DATA</span>
+                {% endif %}
+              </div>
+            </td>
+            <td style="padding:0.85rem 0.5rem; text-transform:uppercase; font-size:0.75rem; color:var(--text-dim);">
+              {{ inv.target_type }}
+            </td>
+            <td style="padding:0.85rem 0.5rem; font-weight:800; color:{% if inv.risk_level == 'CRITICAL' %}var(--danger-red){% elif inv.risk_level == 'HIGH' %}#FF7A00{% elif inv.risk_level == 'MEDIUM' %}var(--warning-amber){% else %}var(--success-green){% endif %};">
+              {{ inv.risk_score }}/100
+            </td>
+            <td style="padding:0.85rem 0.5rem;">
+              <span class="risk-badge risk-badge-{{ inv.risk_level.lower() }}">
+                {{ inv.risk_level }}
+              </span>
+            </td>
+            <td style="padding:0.85rem 0.5rem; color:var(--text-dim); font-size:0.8rem;">
+              {{ inv.created_at.strftime('%Y-%m-%d %H:%M') if inv.created_at else 'Recent' }}
+            </td>
+            <td style="padding:0.85rem 0.5rem; text-align:right;">
+              <div style="display:inline-flex; gap:0.35rem; align-items:center;">
+                <!-- PDF Download -->
+                <a href="{{ url_for('download_report', uuid=inv.uuid, format='pdf') }}" 
+                   class="btn btn-outline btn-sm" title="Download Executive ReportLab PDF" style="padding:3px 7px; font-size:0.75rem;">
+                  <i data-lucide="file-down" style="width:12px;height:12px;"></i> PDF
+                </a>
+                <!-- CSV Download -->
+                <a href="{{ url_for('download_report', uuid=inv.uuid, format='csv') }}" 
+                   class="btn btn-secondary btn-sm" title="Download Structured CSV" style="padding:3px 7px; font-size:0.75rem;">
+                  <i data-lucide="table" style="width:12px;height:12px;"></i> CSV
+                </a>
+                <!-- TXT Download -->
+                <a href="{{ url_for('download_report', uuid=inv.uuid, format='txt') }}" 
+                   class="btn btn-secondary btn-sm" title="Download Text Audit File" style="padding:3px 7px; font-size:0.75rem;">
+                  <i data-lucide="file-text" style="width:12px;height:12px;"></i> TXT
+                </a>
+                <!-- Delete Report Button -->
+                <button type="button" class="btn btn-secondary btn-sm" onclick="deleteReport('{{ inv.uuid }}', this)"
+                        title="Delete Case {{ inv.uuid }}" style="color:var(--danger-red); border-color:rgba(255,82,99,0.35); padding:3px 7px; font-size:0.75rem;">
+                  <i data-lucide="trash-2" style="width:12px;height:12px;"></i> Delete
+                </button>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr id="emptyReportsRow">
+            <td colspan="7" style="text-align:center; padding:3rem; color:var(--text-muted);">
+              No reports stored in the database archive yet. Perform a scan in URL Analyzer or on the Homepage to generate reports.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  async function deleteReport(uuid, btnElement) {
+    if (!confirm(`Are you sure you want to delete investigation report ${uuid}? This action cannot be undone.`)) {
+      return;
+    }
+
+    if (btnElement) {
+      btnElement.disabled = true;
+      btnElement.style.opacity = '0.5';
+    }
+
+    try {
+      const response = await fetch(`/reports/delete/${uuid}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to delete report.');
+      }
+
+      // Smoothly remove row from table
+      const row = document.getElementById(`reportRow_${uuid}`);
+      if (row) {
+        row.style.opacity = '0';
+        row.style.transform = 'translateX(20px)';
+        setTimeout(() => {
+          row.remove();
+          updateReportsCount();
+        }, 300);
+      }
+
+      if (window.showToast) {
+        window.showToast(data.message || 'Report deleted successfully.', 'success');
+      }
+    } catch (err) {
+      console.error('Delete Report Error:', err);
+      if (window.showToast) {
+        window.showToast(err.message || 'Error deleting report.', 'error');
+      }
+      if (btnElement) {
+        btnElement.disabled = false;
+        btnElement.style.opacity = '1';
+      }
+    }
+  }
+
+  async function clearAllReports() {
+    if (!confirm('Are you sure you want to permanently clear ALL archived investigation reports?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/reports/clear-all', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to clear reports archive.');
+      }
+
+      const tbody = document.getElementById('reportsTableBody');
+      if (tbody) {
+        tbody.innerHTML = `
+          <tr id="emptyReportsRow">
+            <td colspan="7" style="text-align:center; padding:3rem; color:var(--text-muted);">
+              No reports stored in the database archive yet. Perform a scan in URL Analyzer or on the Homepage to generate reports.
+            </td>
+          </tr>
+        `;
+      }
+
+      const badge = document.getElementById('reportsCountBadge');
+      if (badge) badge.textContent = '0 Cases';
+
+      if (window.showToast) {
+        window.showToast(data.message || 'All reports cleared.', 'info');
+      }
+    } catch (err) {
+      console.error('Clear All Reports Error:', err);
+      if (window.showToast) {
+        window.showToast(err.message || 'Error clearing reports.', 'error');
+      }
+    }
+  }
+
+  function updateReportsCount() {
+    const tbody = document.getElementById('reportsTableBody');
+    const badge = document.getElementById('reportsCountBadge');
+    if (!tbody || !badge) return;
+
+    const remainingRows = tbody.querySelectorAll('tr:not(#emptyReportsRow)').length;
+    badge.textContent = `${remainingRows} Case${remainingRows === 1 ? '' : 's'}`;
+
+    if (remainingRows === 0) {
+      tbody.innerHTML = `
+        <tr id="emptyReportsRow">
+          <td colspan="7" style="text-align:center; padding:3rem; color:var(--text-muted);">
+            No reports stored in the database archive yet. Perform a scan in URL Analyzer or on the Homepage to generate reports.
+          </td>
+        </tr>
+      `;
+    }
+  }
+</script>
+{% endblock %}

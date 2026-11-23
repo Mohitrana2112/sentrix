@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+
+{% block title %}Domain Intelligence – DNS, SSL &amp; Infrastructure{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+  <div style="display:flex; align-items:center; gap:0.6rem;">
+    <i data-lucide="globe" style="color:var(--cyan-electric); width:28px; height:28px;"></i>
+    <h1 style="font-size:1.8rem; font-weight:800; letter-spacing:-0.02em;">Domain Intelligence Center</h1>
+  </div>
+  <p style="color:var(--text-muted); font-size:0.92rem; margin-top:0.25rem;">
+    Real-time DNS record enumeration, SSL/TLS cryptographic verification, HTTP security header audit, and WHOIS
+    registration data.
+  </p>
+</div>
+
+<!-- ======================================================================
+     DOMAIN INPUT SECTION
+     ====================================================================== -->
+<div class="sentrix-card" style="margin-bottom:1.5rem;">
+  <form id="domainSearchForm" action="{{ url_for('domain_intel') }}" method="GET"
+    style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+    <div style="flex:1; min-width:280px; position:relative;">
+      <i data-lucide="search"
+        style="position:absolute; left:14px; top:12px; color:var(--text-dim); width:18px; height:18px;"></i>
+      <input type="text" name="domain" id="domainInput" class="form-control form-control-mono"
+        style="padding-left:2.6rem;" placeholder="Enter domain (e.g. google.com, cloudflare.com, github.com)..."
+        value="{{ target_domain or '' }}" required>
+    </div>
+    <button type="submit" id="domainSubmitBtn" class="btn btn-primary">
+      <i data-lucide="scan" style="width:16px;height:16px;"></i> <span>Investigate Domain</span>
+    </button>
+  </form>
+
+  <!-- Real-time Scan Animation Bar -->
+  <div id="domainScanBar" class="scanning-bar" style="display:none; margin-top:0.85rem;"></div>
+
+  <!-- Quick Examples -->
+  <div style="display:flex; align-items:center; gap:0.6rem; margin-top:0.85rem; font-size:0.8rem; flex-wrap:wrap;">
+    <span style="color:var(--text-dim); font-weight:600;">Sample Targets:</span>
+    <a href="{{ url_for('domain_intel', domain='cloudflare.com') }}" class="quick-sample-chip"
+      onclick="showDomainLoading('cloudflare.com')">cloudflare.com</a>
+    <a href="{{ url_for('domain_intel', domain='github.com') }}" class="quick-sample-chip"
+      onclick="showDomainLoading('github.com')">github.com</a>
+    <a href="{{ url_for('domain_intel', domain='python.org') }}" class="quick-sample-chip"
+      onclick="showDomainLoading('python.org')">python.org</a>
+    <a href="{{ url_for('domain_intel', domain='wikipedia.org') }}" class="quick-sample-chip"
+      onclick="showDomainLoading('wikipedia.org')">wikipedia.org</a>
+  </div>
+</div>
+
+{% if intel_data %}
+<!-- ======================================================================
+     DOMAIN INTELLIGENCE RESULTS
+     ====================================================================== -->
+
+<!-- Top Summary Status Bar -->
+<div class="sentrix-card"
+  style="margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+  <div>
+    <div style="display:flex; align-items:center; gap:0.65rem;">
+      <h2 style="font-size:1.4rem; font-weight:800; font-family:var(--font-mono); color:var(--text-main);">
+        {{ intel_data.domain }}
+      </h2>
+      <span class="risk-badge risk-badge-low">ACTIVE DOMAIN</span>
+    </div>
+    <div style="font-size:0.82rem; color:var(--text-dim); margin-top:0.3rem;">
+      Query resolved in {{ intel_data.dns.query_time_ms }} ms &bull; {{ intel_data.dns.total_records_found }} DNS
+      records retrieved
+    </div>
+  </div>
+
+  <div style="display:flex; gap:1rem; align-items:center;">
+    <div style="text-align:right;">
+      <div style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase;">Header Security Score</div>
+      {% set score_color = 'success-green' if intel_data.headers.score >= 70 else ('warning-amber' if intel_data.headers.score >= 40 else 'danger-red') %}
+      <div class="text-{{ score_color }}" style="font-size:1.8rem; font-weight:800;">
+        {{ intel_data.headers.score }}%
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bento Grid: DNS & Infrastructure Details -->
+<div style="display:grid; grid-template-columns: 1.4fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+
+  <!-- LEFT: DNS Records Enumeration -->
+  <div class="sentrix-card">
+    <div class="card-header">
+      <div class="card-title-group">
+        <div class="card-title-icon">
+          <i data-lucide="network" style="width:16px;height:16px;"></i>
+        </div>
+        <div>
+          <h3 class="card-title">DNS Record Enumeration</h3>
+          <span class="card-subtitle">Authoritative zone records (dnspython resolution)</span>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-sm" id="copyDnsBtn">
+        <i data-lucide="copy" style="width:12px;height:12px;"></i> Copy DNS
+      </button>
+      <script type="application/json" id="dnsRecordsPayload">{{ intel_data.dns.records|tojson|safe }}</script>
+    </div>
+
+    <!-- Security Highlights (SPF & DMARC) -->
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; margin-bottom:1.25rem;">
+      <div
+        style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); padding:0.75rem 1rem; border-radius:10px;">
+        <div style="font-size:0.75rem; color:var(--text-dim); font-weight:700;">SPF POLICY</div>
+        <div style="display:flex; align-items:center; gap:0.4rem; margin-top:0.25rem;">
+          {% if intel_data.dns.security_features.has_spf %}
+          <i data-lucide="check-circle" style="color:var(--success-green); width:16px;height:16px;"></i>
+          <span style="font-size:0.85rem; font-weight:700; color:var(--success-green);">CONFIGURED</span>
+          {% else %}
+          <i data-lucide="alert-triangle" style="color:var(--danger-red); width:16px;height:16px;"></i>
+          <span style="font-size:0.85rem; font-weight:700; color:var(--danger-red);">MISSING</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div
+        style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); padding:0.75rem 1rem; border-radius:10px;">
+        <div style="font-size:0.75rem; color:var(--text-dim); font-weight:700;">DMARC SPOOFING GUARD</div>
+        <div style="display:flex; align-items:center; gap:0.4rem; margin-top:0.25rem;">
+          {% if intel_data.dns.security_features.has_dmarc %}
+          <i data-lucide="check-circle" style="color:var(--success-green); width:16px;height:16px;"></i>
+          <span style="font-size:0.85rem; font-weight:700; color:var(--success-green);">ENFORCED</span>
+          {% else %}
+          <i data-lucide="alert-triangle" style="color:var(--danger-red); width:16px;height:16px;"></i>
+          <span style="font-size:0.85rem; font-weight:700; color:var(--danger-red);">UNCONFIGURED</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Records Table -->
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border-subtle); color:var(--text-dim); text-align:left;">
+            <th style="padding:0.5rem; width:80px;">Type</th>
+            <th style="padding:0.5rem;">Record Value / Target</th>
+            <th style="padding:0.5rem; width:70px; text-align:right;">TTL</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rtype, reclist in intel_data.dns.records.items() %}
+          {% for rec in reclist %}
+          <tr style="border-bottom:1px solid var(--border-subtle);">
+            <td style="padding:0.6rem 0.5rem;">
+              <span class="sev-tag sev-info">{{ rtype }}</span>
+            </td>
+            <td style="padding:0.6rem 0.5rem; font-family:var(--font-mono); word-break:break-all;">
+              {% if rtype == 'MX' %}
+              <span style="color:var(--warning-amber);">[{{ rec.preference }}]</span> {{ rec.exchange }}
+              {% else %}
+              {{ rec.value }}
+              {% endif %}
+            </td>
+            <td style="padding:0.6rem 0.5rem; text-align:right; color:var(--text-dim); font-family:var(--font-mono);">
+              {{ rec.ttl }}s
+            </td>
+          </tr>
+          {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RIGHT: SSL/TLS & Technology Fingerprinting -->
+  <div style="display:flex; flex-direction:column; gap:1.5rem;">
+
+    <!-- SSL Certificate -->
+    <div class="sentrix-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <div class="card-title-icon" style="background:rgba(33,212,165,0.12); color:var(--success-green);">
+            <i data-lucide="lock" style="width:16px;height:16px;"></i>
+          </div>
+          <div>
+            <h3 class="card-title">SSL/TLS Certificate</h3>
+            <span class="card-subtitle">Cryptographic identity verification</span>
+          </div>
+        </div>
+      </div>
+
+      {% if intel_data.ssl.available %}
+      <div style="display:flex; flex-direction:column; gap:0.6rem; font-size:0.85rem;">
+        <div>
+          <span style="color:var(--text-dim);">Common Name:</span>
+          <div style="font-family:var(--font-mono); font-weight:700;">{{ intel_data.ssl.common_name }}</div>
+        </div>
+        <div>
+          <span style="color:var(--text-dim);">Issuer Organization:</span>
+          <div style="color:var(--cyan-electric); font-weight:600;">{{ intel_data.ssl.issuer_name }}</div>
+        </div>
+        <div>
+          <span style="color:var(--text-dim);">Cipher &amp; Protocol:</span>
+          <div style="font-family:var(--font-mono);">{{ intel_data.ssl.tls_version }} &bull; {{ intel_data.ssl.cipher }}
+            ({{ intel_data.ssl.bits }} bit)</div>
+        </div>
+        <div>
+          <span style="color:var(--text-dim);">Validity Expiration:</span>
+          <div>
+            {{ intel_data.ssl.valid_to }}
+            {% set ssl_status_color = 'danger-red' if intel_data.ssl.days_remaining and intel_data.ssl.days_remaining < 30 else 'success-green' %}
+            <span class="text-{{ ssl_status_color }}" style="font-weight:700;">
+              ({{ intel_data.ssl.days_remaining }} days remaining)
+            </span>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div style="color:var(--danger-red); font-size:0.85rem;">
+        <i data-lucide="alert-triangle" style="width:16px;height:16px;"></i>
+        <span>{{ intel_data.ssl.error }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Passive Technology & Server Headers -->
+    <div class="sentrix-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <div class="card-title-icon" style="background:rgba(139,92,246,0.12); color:var(--violet-neon);">
+            <i data-lucide="cpu" style="width:16px;height:16px;"></i>
+          </div>
+          <div>
+            <h3 class="card-title">Technology Fingerprint</h3>
+            <span class="card-subtitle">Server banners &amp; infrastructure</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:0.85rem; display:flex; flex-direction:column; gap:0.5rem;">
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:var(--text-dim);">Web Server:</span>
+          <span style="font-family:var(--font-mono); font-weight:700;">{{ intel_data.headers.technologies.server
+            }}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:var(--text-dim);">CDN / Edge Proxy:</span>
+          <span style="color:var(--cyan-electric); font-weight:600;">{{ intel_data.headers.technologies.cdn or 'Direct /
+            Not Disclosed' }}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:var(--text-dim);">Framework / Language:</span>
+          <span style="font-family:var(--font-mono);">{{ intel_data.headers.technologies.powered_by or 'Hidden
+            (Hardened)' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- WHOIS Registration Metadata -->
+    <div class="sentrix-card">
+      <div class="card-header">
+        <div class="card-title-group">
+          <div class="card-title-icon">
+            <i data-lucide="id-card" style="width:16px;height:16px;"></i>
+          </div>
+          <div>
+            <h3 class="card-title">WHOIS Information</h3>
+            <span class="card-subtitle">Registrar &amp; domain lifecycle</span>
+          </div>
+        </div>
+      </div>
+
+      {% if intel_data.whois.available %}
+      <div style="font-size:0.85rem; display:flex; flex-direction:column; gap:0.5rem;">
+        <div>
+          <span style="color:var(--text-dim);">Registrar:</span>
+          <div style="font-weight:700;">{{ intel_data.whois.registrar }}</div>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:var(--text-dim);">Created:</span>
+          <span style="font-family:var(--font-mono);">{{ intel_data.whois.creation_date }}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:var(--text-dim);">Expires:</span>
+          <span style="font-family:var(--font-mono);">{{ intel_data.whois.expiration_date }}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:var(--text-dim);">Status:</span>
+          <span style="color:var(--success-green); font-weight:600;">{{ intel_data.whois.status }}</span>
+        </div>
+      </div>
+      {% else %}
+      <p style="font-size:0.82rem; color:var(--text-dim);">
+        {{ intel_data.whois.error }}
+      </p>
+      {% endif %}
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Bottom Section: HTTP Security Headers Evaluation -->
+<div class="sentrix-card">
+  <div class="card-header">
+    <div class="card-title-group">
+      <div class="card-title-icon">
+        <i data-lucide="shield-check" style="width:16px;height:16px;"></i>
+      </div>
+      <div>
+        <h3 class="card-title">HTTP Security Headers Evaluation</h3>
+        <span class="card-subtitle">Defensive response header posture verification</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1rem;">
+    {% for hname, hinfo in intel_data.headers.headers.items() %}
+    <div
+      style="background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); padding:0.85rem 1rem; border-radius:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+        <span style="font-size:0.82rem; font-weight:700; color:var(--text-main);">{{ hname }}</span>
+        {% if hinfo.present %}
+        <span class="sev-tag sev-low">CONFIGURED</span>
+        {% else %}
+        <span class="sev-tag sev-critical">MISSING</span>
+        {% endif %}
+      </div>
+      <p style="font-size:0.75rem; color:var(--text-muted); line-height:1.3; margin-bottom:0.4rem;">
+        {{ hinfo.desc }}
+      </p>
+      {% if hinfo.present and hinfo.value %}
+      <div style="font-family:var(--font-mono); font-size:0.72rem; color:var(--cyan-electric); word-break:break-all;">
+        {{ hinfo.value }}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="sentrix-card" style="text-align:center; padding:4rem 2rem;">
+  <div
+    style="width:64px; height:64px; border-radius:20px; background:rgba(0,213,255,0.1); color:var(--cyan-electric); display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem;">
+    <i data-lucide="search" style="width:36px;height:36px;"></i>
+  </div>
+  <h2 style="font-size:1.4rem; font-weight:800; margin-bottom:0.5rem;">Enter a Domain to Audit</h2>
+  <p style="color:var(--text-muted); font-size:0.9rem; max-width:500px; margin:0 auto 1.5rem;">
+    Discover nameservers, MX records, DMARC policies, TLS cipher configurations, and server defense headers.
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function showDomainLoading(domainName) {
+    const scanBar = document.getElementById('domainScanBar');
+    const btn = document.getElementById('domainSubmitBtn');
+    const input = document.getElementById('domainInput');
+    if (input && domainName) input.value = domainName;
+    if (scanBar) scanBar.style.display = 'block';
+    if (btn) {
+      btn.innerHTML = `<i data-lucide="loader" class="spin" style="width:16px;height:16px;"></i> <span>Investigating...</span>`;
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+
+  document.getElementById('domainSearchForm')?.addEventListener('submit', function () {
+    const val = (document.getElementById('domainInput')?.value || '').trim();
+    showDomainLoading(val);
+  });
+
+  document.getElementById('copyDnsBtn')?.addEventListener('click', function () {
+    const text = document.getElementById('dnsRecordsPayload')?.textContent || '{}';
+    window.copyToClipboard(text, this);
+  });
+</script>
+{% endblock %}

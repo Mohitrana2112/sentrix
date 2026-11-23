@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 50" fill="none">
+  <defs>
+    <style>
+      .wm-text { fill: #F8FAFC; }
+      @media (prefers-color-scheme: light) {
+        .wm-text { fill: #0B132B; }
+      }
+    </style>
+  </defs>
+  <text x="5" y="36" 
+        font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" 
+        font-size="36" 
+        font-weight="900" 
+        letter-spacing="5" 
+        class="wm-text">
+    SENTR<tspan fill="#00D5FF">I</tspan><tspan fill="#2878FF">X</tspan>
+  </text>
+</svg>

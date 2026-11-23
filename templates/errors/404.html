@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}404 – Endpoint Not Found | SENTRIX{% endblock %}
+
+{% block content %}
+<div class="sentrix-card" style="text-align:center; padding:5rem 2rem; max-width:650px; margin:3rem auto;">
+  <div style="width:72px; height:72px; border-radius:24px; background:rgba(255,82,99,0.12); color:var(--danger-red); display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem;">
+    <i data-lucide="alert-octagon" style="width:40px;height:40px;"></i>
+  </div>
+  <h1 style="font-size:2.8rem; font-weight:900; letter-spacing:-0.03em; margin-bottom:0.4rem; color:var(--text-main);">404</h1>
+  <h2 style="font-size:1.25rem; font-weight:700; margin-bottom:1rem; color:var(--danger-red);">ENDPOINT ROUTE NOT LOCATED</h2>
+  <p style="color:var(--text-muted); font-size:0.92rem; margin-bottom:2rem; line-height:1.5;">
+    The requested investigation pathway does not exist within the current security zone or has been deprovisioned.
+  </p>
+  <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+    <i data-lucide="arrow-left" style="width:16px;height:16px;"></i> Return to Security Center
+  </a>
+</div>
+{% endblock %}

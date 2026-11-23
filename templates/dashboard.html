@@ -1,0 +1,1190 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard – Security Intelligence Center{% endblock %}
+
+{% block content %}
+<!-- ======================================================================
+     SECURITY INTELLIGENCE CENTER (CYBER THREAT COMMAND CENTER)
+     ====================================================================== -->
+<section class="sec-intel-command-center">
+  <!-- Top Asymmetric Command Bar: Title, System Status & Engine Badges -->
+  <div class="command-header-row">
+    <div class="command-brand-block">
+      <div class="cyber-shield-hexagon">
+        <svg viewBox="0 0 44 48" class="hex-svg" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22 2L41 12.5V35.5L22 46L3 35.5V12.5L22 2Z" class="hex-border" stroke="url(#hexGrad)"
+            stroke-width="2.5" fill="url(#hexBg)" />
+          <defs>
+            <linearGradient id="hexGrad" x1="3" y1="2" x2="41" y2="46" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#00B8D9" />
+              <stop offset="1" stop-color="#1677FF" />
+            </linearGradient>
+            <linearGradient id="hexBg" x1="22" y1="2" x2="22" y2="46" gradientUnits="userSpaceOnUse">
+              <stop stop-color="rgba(0, 184, 217, 0.12)" />
+              <stop offset="1" stop-color="rgba(22, 119, 255, 0.08)" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <i data-lucide="shield-check" class="hex-icon"></i>
+      </div>
+      <div>
+        <div class="command-title-wrap">
+          <h1 class="command-heading">SECURITY INTELLIGENCE CENTER</h1>
+        </div>
+        <p class="command-tagline">
+          Advanced Domain Intelligence <span class="tagline-dot">•</span> Threat Detection <span
+            class="tagline-dot">•</span> Digital Exposure Analysis
+        </p>
+      </div>
+    </div>
+
+    <!-- Live Telemetry Status Group -->
+    <div class="command-telemetry-group">
+      <div class="live-system-badge">
+        <span class="live-pulse-dot">
+          <span class="live-pulse-ring"></span>
+        </span>
+        <span class="live-badge-text">LIVE SYSTEM</span>
+      </div>
+      <div class="engine-status-pill">
+        <i data-lucide="cpu" class="engine-icon"></i>
+        <span>Threat Intelligence Engine Online</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Advanced URL Investigation Panel -->
+  <div class="investigation-console-panel">
+    <form id="heroSearchForm" class="investigation-form" onsubmit="event.preventDefault(); runHomepageAnalysis();">
+      <div class="investigation-input-group">
+        <div class="input-icon-slot">
+          <i data-lucide="search" class="console-search-icon"></i>
+        </div>
+        <input type="text" name="url" id="heroSearchInput" class="investigation-input"
+          placeholder="Enter URL, Domain, IP Address or Hostname..." autocomplete="off" spellcheck="false" required>
+        <button type="submit" id="heroSubmitBtn" class="analyze-target-btn">
+          <i data-lucide="scan" class="btn-scan-icon"></i>
+          <span>Analyze Target</span>
+          <i data-lucide="arrow-right" class="btn-arrow-icon"></i>
+        </button>
+      </div>
+    </form>
+
+    <!-- Scanning Laser Animation Track -->
+    <div id="heroScanningBar" class="console-scanning-bar">
+      <div class="laser-beam"></div>
+    </div>
+
+    <!-- Error Alert Banner -->
+    <div id="homepageErrorAlert" class="homepage-error-alert" style="display:none;">
+      <i data-lucide="alert-triangle" style="width:16px;height:16px;color:var(--danger-red);flex-shrink:0;"></i>
+      <span id="homepageErrorMsg">Target inspection encountered an error.</span>
+    </div>
+
+    <!-- Security Environment Message -->
+    <div class="console-meta-footer">
+      <div class="security-env-badge">
+        <i data-lucide="lock" style="width:13px; height:13px; color:#00B8D9;"></i>
+        <span>Secure Analysis Environment <span class="tagline-dot">•</span> Real-Time Threat Inspection</span>
+      </div>
+      <div class="telemetry-speed-tag">
+        <i data-lucide="zap" style="width:12px; height:12px; color:#1677FF;"></i>
+        <span>Heuristic &amp; DGA Engine v2.5</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Investigation Scenarios Selector -->
+  <div class="scenarios-container">
+    <div class="scenarios-header-label">
+      <i data-lucide="crosshair" style="width:14px; height:14px; color:#1677FF;"></i>
+      <span>QUICK INVESTIGATION SCENARIOS</span>
+    </div>
+    <div class="scenarios-chips-grid">
+      <div class="scenario-chip" data-scenario="phishing"
+        onclick="quickFill('https://paypa1-account-security-update.com/login?token=x991', this)">
+        <div class="scenario-chip-icon icon-danger">
+          <i data-lucide="alert-triangle"></i>
+        </div>
+        <div class="scenario-chip-content">
+          <div class="scenario-chip-title">Phishing &amp; Typosquatting</div>
+          <div class="scenario-chip-target">paypa1-account-security...</div>
+        </div>
+      </div>
+
+      <div class="scenario-chip" data-scenario="ssrf" onclick="quickFill('http://192.168.1.1/admin/login.php', this)">
+        <div class="scenario-chip-icon icon-warning">
+          <i data-lucide="server"></i>
+        </div>
+        <div class="scenario-chip-content">
+          <div class="scenario-chip-title">Raw IP / Internal SSRF</div>
+          <div class="scenario-chip-target">192.168.1.1/admin...</div>
+        </div>
+      </div>
+
+      <div class="scenario-chip" data-scenario="shortener" onclick="quickFill('https://bit.ly/3xSecurityUpdate', this)">
+        <div class="scenario-chip-icon icon-violet">
+          <i data-lucide="link"></i>
+        </div>
+        <div class="scenario-chip-content">
+          <div class="scenario-chip-title">URL Shortener</div>
+          <div class="scenario-chip-target">bit.ly/3xSecurityUpdate</div>
+        </div>
+      </div>
+
+      <div class="scenario-chip" data-scenario="punycode" onclick="quickFill('https://xn--pple-43d.com/support', this)">
+        <div class="scenario-chip-icon icon-cyan">
+          <i data-lucide="type"></i>
+        </div>
+        <div class="scenario-chip-content">
+          <div class="scenario-chip-title">Punycode Homoglyph</div>
+          <div class="scenario-chip-target">xn--pple-43d.com/support</div>
+        </div>
+      </div>
+
+      <div class="scenario-chip" data-scenario="legitimate" onclick="quickFill('https://github.com', this)">
+        <div class="scenario-chip-icon icon-success">
+          <i data-lucide="shield-check"></i>
+        </div>
+        <div class="scenario-chip-content">
+          <div class="scenario-chip-title">Legitimate Target</div>
+          <div class="scenario-chip-target">github.com (baseline)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       LIVE IN-PLACE URL ANALYSIS CONSOLE (ASYMMETRIC BENTO SUITE)
+       ====================================================================== -->
+  <div id="homepageLiveConsole" class="homepage-live-console" style="display:none;">
+    <!-- Live Header / Target Info -->
+    <div class="live-console-header">
+      <div class="live-target-badge-group">
+        <div class="live-target-icon">
+          <i data-lucide="shield-check" id="liveVerdictIcon"></i>
+        </div>
+        <div style="min-width:0;">
+          <div class="live-target-label">ANALYZED TARGET ENDPOINT</div>
+          <div class="live-target-url" id="liveTargetUrlText" title="Analyzed URL">https://example.com</div>
+        </div>
+      </div>
+      <div class="live-action-buttons">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="copyHomepageTarget()" id="liveCopyTargetBtn">
+          <i data-lucide="copy" style="width:13px;height:13px;"></i> <span>Copy Target</span>
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="copyHomepageDomain()" id="liveCopyDomainBtn">
+          <i data-lucide="globe" style="width:13px;height:13px;"></i> <span>Copy Domain</span>
+        </button>
+        <a id="liveFullAnalyzerLink" href="#" class="btn btn-primary btn-sm">
+          <i data-lucide="maximize-2" style="width:13px;height:13px;"></i> <span>Full Analyzer</span>
+        </a>
+        <a id="liveDomainIntelLink" href="#" class="btn btn-secondary btn-sm">
+          <i data-lucide="network" style="width:13px;height:13px;"></i> <span>Domain Intel</span>
+        </a>
+        <button type="button" class="btn btn-secondary btn-sm live-ai-btn" onclick="askAiAboutTarget()">
+          <i data-lucide="bot" style="width:13px;height:13px;"></i> <span>Ask SENTRIX AI</span>
+        </button>
+        <a id="liveExportPdfBtn" href="#" class="btn btn-outline btn-sm" target="_blank">
+          <i data-lucide="file-down" style="width:13px;height:13px;"></i> <span>Export PDF</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Results Bento Grid: Gauge + Anatomy + IP Intelligence -->
+    <div class="live-bento-grid">
+      <!-- Col 1: Live Risk Gauge & Confidence Summary -->
+      <div class="sentrix-card live-gauge-card">
+        <div class="card-header" style="margin-bottom:0.75rem;">
+          <div class="card-title-group">
+            <div class="card-title-icon">
+              <i data-lucide="activity" style="width:16px;height:16px;"></i>
+            </div>
+            <div>
+              <h3 class="card-title" style="font-size:0.95rem;">Threat Risk Assessment</h3>
+              <span class="card-subtitle">Heuristic &amp; transport evaluation</span>
+            </div>
+          </div>
+          <span id="liveConfidencePill" class="confidence-pill pill-high">HIGH CONFIDENCE</span>
+        </div>
+
+        <div class="live-dial-center">
+          <div class="risk-circle-wrap" style="width:145px; height:145px;">
+            <svg class="risk-circle-svg" viewBox="0 0 160 160">
+              <defs>
+                <linearGradient id="gradLow" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#00D5FF" />
+                  <stop offset="100%" stop-color="#21D4A5" />
+                </linearGradient>
+                <linearGradient id="gradMedium" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#FFD166" />
+                  <stop offset="100%" stop-color="#FFB547" />
+                </linearGradient>
+                <linearGradient id="gradHigh" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#FFB547" />
+                  <stop offset="100%" stop-color="#FF7A00" />
+                </linearGradient>
+                <linearGradient id="gradCritical" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#FF7A00" />
+                  <stop offset="100%" stop-color="#FF5263" />
+                </linearGradient>
+                <filter id="dialGlowFilter" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3.5" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              <!-- Background track ring -->
+              <circle class="risk-circle-bg" cx="80" cy="80" r="66"></circle>
+              <!-- Colored tinted bg ring (updates with risk level) -->
+              <circle id="liveRiskBgRing" cx="80" cy="80" r="66" fill="none" stroke="rgba(33,212,165,0.15)" stroke-width="14" />
+              <!-- Inner circle disc fill (tinted according to risk) -->
+              <circle id="liveRiskInnerFill" cx="80" cy="80" r="58" fill="rgba(33,212,165,0.08)" style="transition: fill 0.5s ease;" />
+              <!-- Progress arc with dynamic risk color -->
+              <circle id="liveRiskProgressCircle" class="risk-circle-progress" cx="80" cy="80" r="66" stroke="#21D4A5"></circle>
+            </svg>
+            <div class="risk-circle-content">
+              <div
+                style="font-size:0.65rem; font-weight:700; text-transform:uppercase; color:var(--text-dim); letter-spacing:0.04em;">
+                Risk Index</div>
+              <div class="risk-circle-score" style="font-size:1.85rem;"><span id="liveRiskScoreVal">0</span></div>
+              <div class="risk-circle-max" style="font-size:0.75rem;">/ 100</div>
+              <div id="liveRiskBadge" class="risk-circle-badge risk-badge-low"
+                style="font-size:0.65rem; padding:2px 7px;">LOW RISK</div>
+            </div>
+          </div>
+        </div>
+
+        <p id="liveRiskSummary" class="live-risk-summary-text">
+          Preliminary static and heuristic evaluation completed.
+        </p>
+        <div id="liveCleanNotice" class="clean-baseline-notice" style="display:none;">
+          <i data-lucide="check-circle" style="width:14px;height:14px;color:var(--success-green);flex-shrink:0;"></i>
+          <span>Zero anomalous indicators detected. Clean baseline applied.</span>
+        </div>
+      </div>
+
+      <!-- Col 2: Interactive URL Anatomy Decomposition -->
+      <div class="sentrix-card live-anatomy-card">
+        <div class="card-header" style="margin-bottom:0.75rem;">
+          <div class="card-title-group">
+            <div class="card-title-icon">
+              <i data-lucide="layers" style="width:16px;height:16px;"></i>
+            </div>
+            <div>
+              <h3 class="card-title" style="font-size:0.95rem;">URL Syntax Anatomy</h3>
+              <span class="card-subtitle">Syntactical element decomposition</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="live-anatomy-highlight" id="liveAnatBox">
+          <span id="liveAnatFullUrl" class="font-mono"></span>
+        </div>
+
+        <div class="live-anatomy-table-wrap">
+          <table class="live-kv-table">
+            <tbody>
+              <tr>
+                <td class="kv-key">Protocol</td>
+                <td id="liveAnatProto" class="font-mono font-bold"></td>
+              </tr>
+              <tr>
+                <td class="kv-key">Subdomain</td>
+                <td id="liveAnatSubdomain" class="font-mono"></td>
+              </tr>
+              <tr>
+                <td class="kv-key">Registered Domain</td>
+                <td id="liveAnatDomain" class="font-mono font-bold" style="color:var(--cyan-electric);"></td>
+              </tr>
+              <tr>
+                <td class="kv-key">TLD</td>
+                <td id="liveAnatTld" class="font-mono"></td>
+              </tr>
+              <tr>
+                <td class="kv-key">Port</td>
+                <td id="liveAnatPort" class="font-mono"></td>
+              </tr>
+              <tr>
+                <td class="kv-key">Path</td>
+                <td id="liveAnatPath" class="font-mono text-break"></td>
+              </tr>
+              <tr>
+                <td class="kv-key">Host Entropy</td>
+                <td id="liveAnatEntropy" class="font-mono" style="color:var(--violet-neon);"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="liveQueryParamsWrap" style="margin-top:0.75rem;">
+          <div
+            style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; margin-bottom:4px; font-weight:700;">
+            Query Parameters</div>
+          <div id="liveQueryParamsList" style="display:flex; flex-wrap:wrap; gap:4px;"></div>
+        </div>
+      </div>
+
+      <!-- Col 3: Resolved IP Intelligence Panel -->
+      <div class="sentrix-card live-ip-card">
+        <div class="card-header" style="margin-bottom:0.75rem;">
+          <div class="card-title-group">
+            <div class="card-title-icon" style="background:rgba(0,184,217,0.12); color:var(--cyan-electric);">
+              <i data-lucide="server" style="width:16px;height:16px;"></i>
+            </div>
+            <div>
+              <h3 class="card-title" style="font-size:0.95rem;">Dual-Stack IP Intelligence</h3>
+              <span class="card-subtitle">IPv4 &amp; IPv6 DNS resolution</span>
+            </div>
+          </div>
+          <span id="liveDnsStatusBadge" class="dns-status-pill pill-resolved">RESOLVED</span>
+        </div>
+
+        <div class="live-ip-table-wrap">
+          <table class="live-kv-table" style="font-size:0.8rem; width:100%;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border-subtle); color:var(--text-dim); text-align:left;">
+                <th style="padding:0.4rem 0.3rem;">Address</th>
+                <th style="padding:0.4rem 0.3rem;">Ver</th>
+                <th style="padding:0.4rem 0.3rem;">Network Class</th>
+                <th style="padding:0.4rem 0.3rem;">Reverse PTR</th>
+              </tr>
+            </thead>
+            <tbody id="liveIpTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="live-ip-meta">
+          <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.72rem; color:var(--text-dim);">
+            <i data-lucide="clock" style="width:12px;height:12px;"></i>
+            <span id="liveIpTimestamp">DNS Lookup: Real-time</span>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" style="font-size:0.7rem; padding:2px 7px;"
+            onclick="copyPrimaryIp()" id="liveCopyIpBtn">
+            <i data-lucide="copy" style="width:11px;height:11px;"></i> <span>Copy IP</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Row: Findings & Defensive Recommendations -->
+    <div class="live-findings-row">
+      <!-- Indicators / Findings Card -->
+      <div class="sentrix-card live-indicators-card">
+        <div class="card-header" style="margin-bottom:0.75rem;">
+          <div class="card-title-group">
+            <div class="card-title-icon" style="background:rgba(255,82,99,0.12); color:var(--danger-red);">
+              <i data-lucide="alert-octagon" style="width:16px;height:16px;"></i>
+            </div>
+            <div>
+              <h3 class="card-title" style="font-size:0.95rem;">Security Indicators &amp; Findings</h3>
+              <span class="card-subtitle">Algorithmic heuristic evidence</span>
+            </div>
+          </div>
+          <span id="liveIndicatorCountBadge" class="badge-counter">0 Findings</span>
+        </div>
+
+        <div id="liveIndicatorsList" class="live-indicators-container">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Defensive Actions Card -->
+      <div class="sentrix-card live-actions-card">
+        <div class="card-header" style="margin-bottom:0.75rem;">
+          <div class="card-title-group">
+            <div class="card-title-icon" style="background:rgba(33,212,165,0.12); color:var(--success-green);">
+              <i data-lucide="shield-check" style="width:16px;height:16px;"></i>
+            </div>
+            <div>
+              <h3 class="card-title" style="font-size:0.95rem;">Recommended Defensive Actions</h3>
+              <span class="card-subtitle">Operational precautions for analysts</span>
+            </div>
+          </div>
+        </div>
+
+        <ul id="liveRecsList" class="live-recs-list">
+          <!-- Rendered dynamically -->
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ======================================================================
+     STATISTICS TILES
+     ====================================================================== -->
+<section class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon-wrapper stat-icon-cyan">
+      <i data-lucide="globe" style="width:26px;height:26px;"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-value" id="statsTotalDomains">{{ stats.total_domains }}</div>
+      <div class="stat-label">Total Domains Analyzed</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon-wrapper stat-icon-blue">
+      <i data-lucide="link" style="width:26px;height:26px;"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-value" id="statsTotalUrls">{{ stats.total_urls }}</div>
+      <div class="stat-label">URLs Scanned</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon-wrapper stat-icon-red">
+      <i data-lucide="alert-octagon" style="width:26px;height:26px;"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-value" id="statsSuspiciousPatterns">{{ stats.suspicious_patterns }}</div>
+      <div class="stat-label">Suspicious Patterns Detected</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon-wrapper stat-icon-violet">
+      <i data-lucide="crosshair" style="width:26px;height:26px;"></i>
+    </div>
+    <div class="stat-details">
+      <div class="stat-value" id="statsOsintQueries">{{ stats.osint_queries }}</div>
+      <div class="stat-label">OSINT Queries Generated</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================================
+     ASYMMETRIC BENTO GRID (CHARTS & TIMELINES)
+     ====================================================================== -->
+<section class="bento-grid">
+  <!-- LEFT: Investigation Activity Timeline Chart -->
+  <div class="sentrix-card">
+    <div class="card-header">
+      <div class="card-title-group">
+        <div class="card-title-icon">
+          <i data-lucide="activity" style="width:18px;height:18px;"></i>
+        </div>
+        <div>
+          <h3 class="card-title">Investigation Activity Timeline</h3>
+          <span class="card-subtitle">Real-time scan volume and anomalous heuristic detection</span>
+        </div>
+      </div>
+      <span class="risk-badge risk-badge-low">TELEMETRY LIVE</span>
+    </div>
+    <div style="height: 320px; position: relative;">
+      <canvas id="activityTimelineChart"></canvas>
+    </div>
+  </div>
+
+  <!-- RIGHT: Circular Intelligence Radar -->
+  <div class="sentrix-card">
+    <div class="card-header">
+      <div class="card-title-group">
+        <div class="card-title-icon">
+          <i data-lucide="radar" style="width:18px;height:18px;"></i>
+        </div>
+        <div>
+          <h3 class="card-title">Circular Intelligence Radar</h3>
+          <span class="card-subtitle">Multi-vector threat distribution</span>
+        </div>
+      </div>
+    </div>
+    <div style="height: 320px; position: relative;">
+      <canvas id="intelligenceRadarChart"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================================
+     EQUAL ROW: RECENT INVESTIGATIONS & THREAT CLASSIFICATION
+     ====================================================================== -->
+<section class="bento-row-equal">
+  <!-- Recent Investigations Table -->
+  <div class="sentrix-card">
+    <div class="card-header">
+      <div class="card-title-group">
+        <div class="card-title-icon">
+          <i data-lucide="history" style="width:18px;height:18px;"></i>
+        </div>
+        <div>
+          <h3 class="card-title">Recent Investigations</h3>
+          <span class="card-subtitle">History of inspected endpoints</span>
+        </div>
+      </div>
+      <a href="{{ url_for('reports_view') }}" class="btn btn-outline btn-sm">View All</a>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border-subtle); color:var(--text-dim); text-align:left;">
+            <th style="padding:0.6rem 0.5rem;">Target</th>
+            <th style="padding:0.6rem 0.5rem;">Score</th>
+            <th style="padding:0.6rem 0.5rem;">Verdict</th>
+            <th style="padding:0.6rem 0.5rem;">Status</th>
+            <th style="padding:0.6rem 0.5rem; text-align:right;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="recentInvestigationsTbody">
+          {% for inv in recent_investigations %}
+          <tr style="border-bottom:1px solid var(--border-subtle);">
+            <td style="padding:0.75rem 0.5rem; font-family:var(--font-mono); color:var(--text-main);">
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span title="{{ inv.target_input }}">{{ inv.target_input[:28] }}{% if inv.target_input|length > 28
+                  %}...{% endif %}</span>
+                {% if inv.is_demo %}
+                <span class="demo-badge" title="Fabricated sample entry for demonstration">DEMO DATA</span>
+                {% endif %}
+              </div>
+            </td>
+            <td style="padding:0.75rem 0.5rem; font-weight:700;">{{ inv.risk_score }}/100</td>
+            <td style="padding:0.75rem 0.5rem;">
+              <span class="risk-badge risk-badge-{{ inv.risk_level.lower() }}">{{ inv.risk_level }}</span>
+            </td>
+            <td style="padding:0.75rem 0.5rem; color:var(--text-dim); font-size:0.75rem;">
+              {{ inv.created_at.strftime('%m-%d %H:%M') if inv.created_at else 'Just now' }}
+            </td>
+            <td style="padding:0.75rem 0.5rem; text-align:right;">
+              <a href="{{ url_for('url_analyzer', url=inv.target_input) if inv.target_type == 'url' else url_for('domain_intel', domain=inv.target_input) }}"
+                class="btn btn-secondary btn-sm" style="padding:3px 8px;">
+                <i data-lucide="external-link" style="width:12px;height:12px;"></i> View
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr id="noInvestigationsRow">
+            <td colspan="5" style="text-align:center; padding:2rem; color:var(--text-muted);">
+              No investigations recorded yet. Use the command bar above to start.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Radial Risk Distribution & Threat Classification -->
+  <div class="sentrix-card">
+    <div class="card-header">
+      <div class="card-title-group">
+        <div class="card-title-icon">
+          <i data-lucide="pie-chart" style="width:18px;height:18px;"></i>
+        </div>
+        <div>
+          <h3 class="card-title">Threat Classification &amp; Risk Profiles</h3>
+          <span class="card-subtitle">Aggregate vulnerability distribution</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; height:320px;">
+      <div style="position:relative; height:100%;">
+        <canvas id="riskDistributionChart"></canvas>
+      </div>
+      <div style="position:relative; height:100%;">
+        <canvas id="threatClassificationChart"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="riskPostureConfig" data-avg-score="{{ risk_posture.avg_score }}" data-level="{{ risk_posture.level }}"
+  style="display:none;"></div>
+<script>
+  const _riskCfg = document.getElementById('riskPostureConfig');
+  const LIVE_AVG_SCORE = _riskCfg ? parseInt(_riskCfg.getAttribute('data-avg-score'), 10) : 58;
+  const LIVE_RISK_LEVEL = _riskCfg ? _riskCfg.getAttribute('data-level') : 'LOW';
+  const CIRCLE_CIRCUMFERENCE = 414.7;
+
+  // Active investigation result cache for copy and AI actions
+  window.lastHomepageAnalysisResult = null;
+
+  function setLiveCircleProgress(score, level) {
+    const circle = document.getElementById('liveRiskProgressCircle');
+    const scoreNumElem = document.getElementById('liveRiskScoreVal');
+    const circleWrap = document.querySelector('.live-gauge-card .risk-circle-wrap');
+    const bgRing = document.getElementById('liveRiskBgRing');
+    const innerFill = document.getElementById('liveRiskInnerFill');
+    const liveCard = document.querySelector('.live-gauge-card');
+    const liveBadge = document.getElementById('liveRiskBadge');
+    if (!circle || !scoreNumElem) return;
+
+    const clampedScore = Math.max(0, Math.min(100, Number(score) || 0));
+
+    // For score 0, show a small 4% arc stub so the dial is visibly green
+    const minArcFraction = clampedScore === 0 ? 0.04 : clampedScore / 100;
+    const targetOffset = CIRCLE_CIRCUMFERENCE - (CIRCLE_CIRCUMFERENCE * minArcFraction);
+    circle.style.strokeDashoffset = targetOffset;
+
+    // Determine risk tier: 75+ = CRITICAL (Red), 50-74 = HIGH (Orange), 25-49 = MEDIUM (Amber), 0-24 = LOW (Green)
+    let lvl = 'LOW';
+    if (clampedScore >= 75) {
+      lvl = 'CRITICAL';
+    } else if (clampedScore >= 50) {
+      lvl = 'HIGH';
+    } else if (clampedScore >= 25) {
+      lvl = 'MEDIUM';
+    } else {
+      lvl = 'LOW';
+    }
+    if (level && typeof level === 'string' && level.trim()) {
+      lvl = level.trim().toUpperCase();
+    }
+
+    // Per-tier solid color tokens according to risk score
+    const colors = {
+      LOW:      { stroke: '#21D4A5', bg: 'rgba(33,212,165,0.15)',  inner: 'rgba(33,212,165,0.08)' },
+      MEDIUM:   { stroke: '#FFB547', bg: 'rgba(255,181,71,0.15)',  inner: 'rgba(255,181,71,0.08)' },
+      HIGH:     { stroke: '#FF7A00', bg: 'rgba(255,122,0,0.18)',   inner: 'rgba(255,122,0,0.09)' },
+      CRITICAL: { stroke: '#FF5263', bg: 'rgba(255,82,99,0.20)',   inner: 'rgba(255,82,99,0.12)' }
+    };
+    const c = colors[lvl] || colors.LOW;
+
+    // Apply color directly to the progress circle stroke (CSS style property takes highest precedence)
+    circle.style.setProperty('stroke', c.stroke, 'important');
+    circle.style.stroke = c.stroke;
+    circle.setAttribute('stroke', c.stroke);
+    circle.style.filter = 'none';
+
+    // Tint the background track ring to match risk color
+    if (bgRing) {
+      bgRing.style.setProperty('stroke', c.bg, 'important');
+      bgRing.style.stroke = c.bg;
+      bgRing.setAttribute('stroke', c.bg);
+    }
+
+    // Inner circle disc fill (inside the circle)
+    if (innerFill) {
+      innerFill.style.setProperty('fill', c.inner, 'important');
+      innerFill.setAttribute('fill', c.inner);
+    }
+
+    // Score number: solid bold color matching risk without shadow
+    scoreNumElem.style.color = c.stroke;
+    scoreNumElem.style.textShadow = 'none';
+
+    // Badge styling matching risk color without shadow
+    if (liveBadge) {
+      liveBadge.className = `risk-circle-badge risk-badge-${lvl.toLowerCase()}`;
+      liveBadge.textContent = `${lvl} RISK`;
+      liveBadge.style.boxShadow = 'none';
+      liveBadge.style.color = c.stroke;
+      liveBadge.style.borderColor = c.stroke;
+      liveBadge.style.background = c.inner;
+    }
+
+    // No shadows on wraps
+    if (circleWrap) {
+      circleWrap.style.boxShadow = 'none';
+      circleWrap.style.borderRadius = '50%';
+    }
+    if (liveCard) {
+      liveCard.style.boxShadow = 'none';
+    }
+
+    // Animated counting number
+    const currentScore = parseInt(scoreNumElem.textContent) || 0;
+    const duration = 500;
+    const start = performance.now();
+    function step(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const val = Math.round(currentScore + (clampedScore - currentScore) * progress);
+      scoreNumElem.textContent = val;
+      if (progress < 1) requestAnimationFrame(step);
+      else scoreNumElem.textContent = clampedScore;
+    }
+    requestAnimationFrame(step);
+  }
+
+    // Animated counting number
+    const currentScore = parseInt(scoreNumElem.textContent) || 0;
+    const duration = 600;
+    const start = performance.now();
+    function step(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const val = Math.round(currentScore + (clampedScore - currentScore) * progress);
+      scoreNumElem.textContent = val;
+      if (progress < 1) requestAnimationFrame(step);
+      else scoreNumElem.textContent = clampedScore;
+    }
+    requestAnimationFrame(step);
+  }
+
+  function quickFill(url, element) {
+    const input = document.getElementById('heroSearchInput');
+    if (input) {
+      input.value = url;
+    }
+    // Update scenario chip active highlighting
+    document.querySelectorAll('.scenario-chip').forEach(c => c.classList.remove('active'));
+    if (element) {
+      element.classList.add('active');
+    }
+    // Execute live analysis directly on the homepage
+    runHomepageAnalysis(url);
+  }
+
+  /**
+   * HOMEPAGE IN-PLACE AJAX URL ANALYSIS
+   * Executes deep heuristic inspection, IP intelligence and renders live bento suite directly on the dashboard.
+   */
+  async function runHomepageAnalysis(targetUrlOverride) {
+    const input = document.getElementById('heroSearchInput');
+    const targetUrl = (targetUrlOverride || (input ? input.value : '')).trim();
+    const scanBar = document.getElementById('heroScanningBar');
+    const submitBtn = document.getElementById('heroSubmitBtn');
+    const errorAlert = document.getElementById('homepageErrorAlert');
+    const errorMsg = document.getElementById('homepageErrorMsg');
+    const liveConsole = document.getElementById('homepageLiveConsole');
+
+    if (!targetUrl) {
+      if (window.showToast) window.showToast('Please enter a target URL or domain to inspect.', 'warning');
+      return;
+    }
+
+    // Show loading states
+    if (errorAlert) errorAlert.style.display = 'none';
+    if (scanBar) scanBar.classList.add('active');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = '0.85';
+      const label = submitBtn.querySelector('span');
+      if (label) label.textContent = 'Scanning Target...';
+    }
+
+    try {
+      const response = await fetch('/api/analyze-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: targetUrl })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Server returned an error processing the target.');
+      }
+
+      // Cache globally for actions and AI assistant
+      window.lastHomepageAnalysisResult = data;
+      window.currentAnalysisContext = data;
+
+      // Render the live console
+      renderHomepageAnalysis(data);
+
+      if (window.showToast) {
+        window.showToast(`Analysis complete: ${data.risk.classification} RISK (${data.risk.score}/100)`, 'success');
+      }
+
+      // Scroll smoothly to the results console
+      setTimeout(() => {
+        liveConsole.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+
+    } catch (err) {
+      console.error('Homepage Analysis Error:', err);
+      if (errorAlert && errorMsg) {
+        errorMsg.textContent = err.message || 'Inspection failed. Please verify URL syntax or target connectivity.';
+        errorAlert.style.display = 'flex';
+      }
+      if (window.showToast) {
+        window.showToast(err.message || 'Failed to inspect target.', 'error');
+      }
+    } finally {
+      if (scanBar) scanBar.classList.remove('active');
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        const label = submitBtn.querySelector('span');
+        if (label) label.textContent = 'Analyze Target';
+      }
+    }
+  }
+
+  function renderHomepageAnalysis(data) {
+    const liveConsole = document.getElementById('homepageLiveConsole');
+    if (!liveConsole) return;
+    liveConsole.style.display = 'block';
+
+    const anat = data.anatomy || {};
+    const risk = data.risk || {};
+    const ipIntel = data.ip_intelligence || {};
+    const recs = data.recommendations || [];
+
+    // 1. Target Banner & Links
+    const targetText = document.getElementById('liveTargetUrlText');
+    if (targetText) {
+      targetText.textContent = data.url;
+      targetText.title = data.url;
+    }
+
+    const fullAnalyzerLink = document.getElementById('liveFullAnalyzerLink');
+    if (fullAnalyzerLink) {
+      fullAnalyzerLink.href = `/url-analyzer?url=${encodeURIComponent(data.url)}`;
+    }
+
+    const domainIntelLink = document.getElementById('liveDomainIntelLink');
+    if (domainIntelLink) {
+      domainIntelLink.href = `/domain-intel?domain=${encodeURIComponent(anat.domain || anat.registered_domain || '')}`;
+    }
+
+    const exportPdfBtn = document.getElementById('liveExportPdfBtn');
+    if (exportPdfBtn) {
+      if (data.investigation_uuid) {
+        exportPdfBtn.href = `/api/download-report/${data.investigation_uuid}?format=pdf`;
+        exportPdfBtn.style.display = 'inline-flex';
+      } else {
+        exportPdfBtn.style.display = 'none';
+      }
+    }
+
+    // Verdict Icon
+    const verdictIcon = document.getElementById('liveVerdictIcon');
+    if (verdictIcon) {
+      if (risk.classification === 'CRITICAL' || risk.classification === 'HIGH') {
+        verdictIcon.setAttribute('data-lucide', 'alert-octagon');
+        verdictIcon.parentElement.style.background = 'rgba(255,82,99,0.15)';
+        verdictIcon.parentElement.style.color = 'var(--danger-red)';
+      } else if (risk.classification === 'MEDIUM') {
+        verdictIcon.setAttribute('data-lucide', 'alert-triangle');
+        verdictIcon.parentElement.style.background = 'rgba(255,181,71,0.15)';
+        verdictIcon.parentElement.style.color = 'var(--warning-amber)';
+      } else {
+        verdictIcon.setAttribute('data-lucide', 'shield-check');
+        verdictIcon.parentElement.style.background = 'rgba(33,212,165,0.15)';
+        verdictIcon.parentElement.style.color = 'var(--success-green)';
+      }
+    }
+
+    // 2. Risk Score & Confidence Badge — setLiveCircleProgress also updates badge & card glow
+    setLiveCircleProgress(risk.score || 0, risk.classification || 'LOW');
+
+    const confPill = document.getElementById('liveConfidencePill');
+    if (confPill) {
+      const conf = (risk.confidence || 'HIGH').toUpperCase();
+      confPill.textContent = `${conf} CONFIDENCE`;
+      confPill.className = `confidence-pill pill-${conf.toLowerCase()}`;
+    }
+
+    const summaryText = document.getElementById('liveRiskSummary');
+    if (summaryText) {
+      summaryText.textContent = risk.summary || 'Heuristic evaluation completed.';
+    }
+
+    const cleanNotice = document.getElementById('liveCleanNotice');
+    if (cleanNotice) {
+      cleanNotice.style.display = (risk.score === 0 || risk.indicators.length === 0) ? 'flex' : 'none';
+    }
+
+    // 3. Anatomy Decomposition
+    const fullUrlElem = document.getElementById('liveAnatFullUrl');
+    if (fullUrlElem) fullUrlElem.textContent = anat.full_url || data.url;
+
+    document.getElementById('liveAnatProto').textContent = (anat.protocol || 'http') + '://';
+    document.getElementById('liveAnatSubdomain').textContent = anat.subdomain || '(none)';
+    document.getElementById('liveAnatDomain').textContent = anat.registered_domain || anat.domain || '(none)';
+    document.getElementById('liveAnatTld').textContent = anat.tld || '(none)';
+    document.getElementById('liveAnatPort').textContent = anat.port || '(default)';
+    document.getElementById('liveAnatPath').textContent = anat.path || '/';
+    document.getElementById('liveAnatEntropy').textContent = (anat.host_entropy !== undefined ? anat.host_entropy : '0.000') + ' bits/char';
+
+    // Query parameters
+    const qList = document.getElementById('liveQueryParamsList');
+    if (qList) {
+      qList.innerHTML = '';
+      const params = anat.query_params || {};
+      const keys = Object.keys(params);
+      if (keys.length === 0) {
+        qList.innerHTML = '<span style="font-size:0.75rem; color:var(--text-dim);">(No query parameters detected)</span>';
+      } else {
+        keys.forEach(k => {
+          const chip = document.createElement('span');
+          chip.className = 'query-param-chip';
+          chip.innerHTML = `<strong>${escapeHtml(k)}</strong> = <code>${escapeHtml(params[k])}</code>`;
+          qList.appendChild(chip);
+        });
+      }
+    }
+
+    // 4. IP Intelligence Dual-Stack Table
+    const ipTbody = document.getElementById('liveIpTableBody');
+    const dnsStatusBadge = document.getElementById('liveDnsStatusBadge');
+    const ipTimestamp = document.getElementById('liveIpTimestamp');
+
+    if (ipTimestamp && ipIntel.timestamp) {
+      ipTimestamp.textContent = `DNS Lookup: ${ipIntel.timestamp}`;
+    }
+
+    if (dnsStatusBadge) {
+      const status = (ipIntel.status || 'RESOLVED').toUpperCase();
+      dnsStatusBadge.textContent = status;
+      dnsStatusBadge.className = status === 'RESOLVED' ? 'dns-status-pill pill-resolved' : 'dns-status-pill pill-unresolved';
+    }
+
+    if (ipTbody) {
+      ipTbody.innerHTML = '';
+      const ipDetails = ipIntel.details || ipIntel.ip_details || [];
+      if (ipDetails.length === 0) {
+        ipTbody.innerHTML = `
+          <tr>
+            <td colspan="4" style="text-align:center; padding:1.2rem; color:var(--text-dim);">
+              No resolved IP addresses for target (offline or unresolvable hostname).
+            </td>
+          </tr>
+        `;
+      } else {
+        ipDetails.forEach(ipItem => {
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid var(--border-subtle)';
+
+          let classTag = 'public';
+          if (ipItem.is_private) classTag = 'private';
+          else if (ipItem.is_loopback) classTag = 'loopback';
+          else if (ipItem.is_reserved) classTag = 'reserved';
+
+          const verStr = ipItem.version ? (String(ipItem.version).startsWith('IPv') ? ipItem.version : `IPv${ipItem.version}`) : 'IPv4';
+
+          tr.innerHTML = `
+            <td style="padding:0.45rem 0.3rem; font-family:var(--font-mono); font-weight:700; color:var(--text-main);">
+              ${escapeHtml(ipItem.ip)}
+            </td>
+            <td style="padding:0.45rem 0.3rem; font-family:var(--font-mono); font-size:0.75rem; color:var(--text-dim);">
+              ${escapeHtml(verStr)}
+            </td>
+            <td style="padding:0.45rem 0.3rem;">
+              <span class="net-class-badge net-class-${classTag}">${escapeHtml(ipItem.classification || 'Public')}</span>
+            </td>
+            <td style="padding:0.45rem 0.3rem; font-family:var(--font-mono); font-size:0.75rem; color:var(--text-muted); word-break:break-all;">
+              ${escapeHtml(ipItem.ptr || '(no PTR record)')}
+            </td>
+          `;
+          ipTbody.appendChild(tr);
+        });
+      }
+    }
+
+    // 5. Security Indicators
+    const indContainer = document.getElementById('liveIndicatorsList');
+    const indCountBadge = document.getElementById('liveIndicatorCountBadge');
+    const indicators = risk.indicators || [];
+
+    if (indCountBadge) {
+      indCountBadge.textContent = `${indicators.length} Finding${indicators.length === 1 ? '' : 's'}`;
+    }
+
+    if (indContainer) {
+      indContainer.innerHTML = '';
+      if (indicators.length === 0) {
+        indContainer.innerHTML = `
+          <div class="clean-findings-box">
+            <i data-lucide="shield-check" style="width:32px;height:32px;color:var(--success-green);margin-bottom:0.4rem;"></i>
+            <div style="font-weight:700; color:var(--text-main); font-size:0.9rem;">No Malicious Heuristics Detected</div>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">
+              Syntax structures, transport protocols, and brand distance adhere to legitimate baselines.
+            </div>
+          </div>
+        `;
+      } else {
+        indicators.forEach(ind => {
+          const card = document.createElement('div');
+          card.className = `live-indicator-card border-left-${getSevColorClass(ind.severity)}`;
+          card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+              <div style="display:flex; align-items:center; gap:0.4rem;">
+                <span class="sev-tag sev-${(ind.severity || 'low').toLowerCase()}">${escapeHtml(ind.severity)}</span>
+                <span style="font-weight:700; font-size:0.88rem; color:var(--text-main);">${escapeHtml(ind.name)}</span>
+              </div>
+              <span style="font-family:var(--font-mono); font-size:0.75rem; font-weight:700; color:var(--text-dim);">+${ind.score_impact} pts</span>
+            </div>
+            <div style="font-size:0.8rem; margin-bottom:0.35rem; color:var(--cyan-electric); font-family:var(--font-mono);">
+              <strong>Evidence:</strong> ${escapeHtml(ind.evidence || '')}
+            </div>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.45rem; line-height:1.4;">
+              ${escapeHtml(ind.technical_explanation || '')}
+            </p>
+            <div class="live-precaution-box">
+              <strong style="color:var(--text-main);">Precaution:</strong> ${escapeHtml(ind.precaution || '')}
+            </div>
+          `;
+          indContainer.appendChild(card);
+        });
+      }
+    }
+
+    // 6. Defensive Recommendations
+    const recsList = document.getElementById('liveRecsList');
+    if (recsList) {
+      recsList.innerHTML = '';
+      if (recs.length === 0) {
+        recsList.innerHTML = '<li style="color:var(--text-dim); font-size:0.8rem;">Standard perimeter controls applicable.</li>';
+      } else {
+        recs.forEach(r => {
+          const li = document.createElement('li');
+          li.className = 'live-rec-item';
+          li.innerHTML = `<i data-lucide="check" style="width:13px;height:13px;color:var(--cyan-electric);flex-shrink:0;"></i> <span>${escapeHtml(r)}</span>`;
+          recsList.appendChild(li);
+        });
+      }
+    }
+
+    // 7. Dynamically add newly analyzed target to Recent Investigations table and update stats
+    addHomepageInvestigationToHistory(data);
+
+    // Refresh Lucide icons
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function addHomepageInvestigationToHistory(data) {
+    const tbody = document.getElementById('recentInvestigationsTbody');
+    if (!tbody) return;
+
+    // Remove empty placeholder row if it exists
+    const emptyRow = document.getElementById('noInvestigationsRow');
+    if (emptyRow) emptyRow.remove();
+
+    const risk = data.risk || {};
+    const target = data.url || '';
+    const score = risk.score !== undefined ? risk.score : 0;
+    const level = risk.classification || 'LOW';
+    const targetShort = target.length > 28 ? target.substring(0, 28) + '...' : target;
+    const timeStr = data.created_at || 'Just now';
+
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid var(--border-subtle)';
+    tr.style.background = 'rgba(0, 213, 255, 0.08)';
+    tr.style.transition = 'background 1.5s ease';
+
+    tr.innerHTML = `
+      <td style="padding:0.75rem 0.5rem; font-family:var(--font-mono); color:var(--text-main);">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <span title="${escapeHtml(target)}">${escapeHtml(targetShort)}</span>
+          <span class="live-pulse-dot" style="width:6px;height:6px;background:var(--cyan-electric);" title="Live Analyzed"></span>
+        </div>
+      </td>
+      <td style="padding:0.75rem 0.5rem; font-weight:700;">${score}/100</td>
+      <td style="padding:0.75rem 0.5rem;">
+        <span class="risk-badge risk-badge-${level.toLowerCase()}">${escapeHtml(level)}</span>
+      </td>
+      <td style="padding:0.75rem 0.5rem; color:var(--text-dim); font-size:0.75rem;">
+        ${escapeHtml(timeStr)}
+      </td>
+      <td style="padding:0.75rem 0.5rem; text-align:right;">
+        <a href="/url-analyzer?url=${encodeURIComponent(target)}" class="btn btn-secondary btn-sm" style="padding:3px 8px;">
+          <i data-lucide="external-link" style="width:12px;height:12px;"></i> View
+        </a>
+      </td>
+    `;
+
+    tbody.insertBefore(tr, tbody.firstChild);
+
+    // Keep table to max 10 rows
+    while (tbody.children.length > 10) {
+      tbody.removeChild(tbody.lastChild);
+    }
+
+    // Increment stats counters
+    const urlsElem = document.getElementById('statsTotalUrls');
+    if (urlsElem) {
+      const cur = parseInt(urlsElem.textContent) || 0;
+      urlsElem.textContent = cur + 1;
+    }
+    if (score >= 50) {
+      const suspElem = document.getElementById('statsSuspiciousPatterns');
+      if (suspElem) {
+        const cur = parseInt(suspElem.textContent) || 0;
+        suspElem.textContent = cur + 1;
+      }
+    }
+
+    setTimeout(() => {
+      tr.style.background = 'transparent';
+    }, 2500);
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function getSevColorClass(sev) {
+    switch ((sev || '').toUpperCase()) {
+      case 'CRITICAL': return 'danger-red';
+      case 'HIGH': return 'danger-red';
+      case 'MEDIUM': return 'warning-amber';
+      default: return 'success-green';
+    }
+  }
+
+  function copyHomepageTarget() {
+    if (window.lastHomepageAnalysisResult && window.lastHomepageAnalysisResult.url) {
+      window.copyToClipboard(window.lastHomepageAnalysisResult.url, document.getElementById('liveCopyTargetBtn'));
+    }
+  }
+
+  function copyHomepageDomain() {
+    if (window.lastHomepageAnalysisResult) {
+      const anat = window.lastHomepageAnalysisResult.anatomy || {};
+      const domain = anat.domain || anat.registered_domain || '';
+      if (domain) {
+        window.copyToClipboard(domain, document.getElementById('liveCopyDomainBtn'));
+      }
+    }
+  }
+
+  function copyPrimaryIp() {
+    if (window.lastHomepageAnalysisResult) {
+      const ipIntel = window.lastHomepageAnalysisResult.ip_intelligence || {};
+      const ips = ipIntel.all_ips || (ipIntel.ipv4 || []);
+      if (ips.length > 0) {
+        window.copyToClipboard(ips[0], document.getElementById('liveCopyIpBtn'));
+      }
+    }
+  }
+
+  function askAiAboutTarget() {
+    if (!window.lastHomepageAnalysisResult) return;
+    const target = window.lastHomepageAnalysisResult.url;
+    const score = window.lastHomepageAnalysisResult.risk.score;
+    const level = window.lastHomepageAnalysisResult.risk.classification;
+    const prompt = `Analyze target ${target} (Risk Score: ${score}/100, Verdict: ${level}). What are the key threat vectors and recommended SOC containment measures?`;
+
+    if (typeof window.openSentrixChatWithPrompt === 'function') {
+      window.openSentrixChatWithPrompt(prompt);
+    } else {
+      const launcher = document.getElementById('chatbotLauncherBtn');
+      if (launcher) launcher.click();
+      const input = document.getElementById('chatbotInput');
+      if (input) {
+        input.value = prompt;
+        input.focus();
+      }
+    }
+  }
+
+  function escapeHtml(string) {
+    const entityMap = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '/': '&#x2F;' };
+    return String(string || '').replace(/[&<>"'\/]/g, s => entityMap[s]);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Initialize the gauge ring with green (LOW RISK) on page load so circle is never gray
+    setLiveCircleProgress(0, 'LOW');
+
+    // Auto-check if URL was passed in GET parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetParam = urlParams.get('url');
+    if (targetParam) {
+      const input = document.getElementById('heroSearchInput');
+      if (input) input.value = targetParam;
+      runHomepageAnalysis(targetParam);
+    }
+  });
+</script>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}
